@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf=8 -*-
-
 from __future__ import print_function
 import tempfile
 import os
@@ -13,6 +10,17 @@ def get_word_index():
 
 def load_data(num_words=None, skip_top=0, maxlen=None,
               seed=113, start_char=1, oov_char=2, index_from=3):
+
+    """Wrapper around keras.datasets.imdb.load_data
+       Purpose: Cache preprocessed imdb data
+       
+    # Arguments
+        See keras.datasets.imdb.load_data
+
+    # Returns
+        Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
+    """
+
     imdbdir = os.path.join(tempfile.gettempdir(), "imdbcache")
     if not os.path.exists(imdbdir):
         os.makedirs(imdbdir)
