@@ -14,6 +14,7 @@ class Catch(Game):
         n = random.randrange(0, self.grid_size-1)
         m = random.randrange(1, self.grid_size-2)
         self.state = [0, n, m]
+        self.penalty = 0
 
     @property
     def name(self):
@@ -30,10 +31,11 @@ class Catch(Game):
         if action == 0:
             new_basket = max(1, basket-1)
         elif action == 2:
-            new_basket = min(self.grid_size-1, basket+1)
+            new_basket = min(self.grid_size-2, basket+1)
         else:
             new_basket = basket
         self.state = [fy+1, fx, new_basket]
+        self.penalty = 0.0 if action == 1 else -0.1
 
     def get_state(self):
         im_size = (self.grid_size,) * 2
@@ -51,11 +53,11 @@ class Catch(Game):
 
     def get_score(self):
         if self.is_won():
-            return 1
+            return 1.0
         elif self.is_over():
-            return -1
+            return -1.0
         else:
-            return 0
+            return self.penalty
 
     def is_over(self):
         return self.state[0] == self.grid_size-1

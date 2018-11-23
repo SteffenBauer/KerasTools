@@ -78,16 +78,12 @@ class Snake(Game):
         return canvas
 
     def get_score(self):
-        if self.game_over and self.max_turn == None:
-            score = -1
-        elif self.game_over and self.max_turn > 0 and self.turn < self.max_turn:
-            score = -10
-        elif self.game_over and self.turn >= self.max_turn and len(self.snake) <= self.snake_length:
-            score = -5
+        if self.self_bite() or self.hit_border():
+            score = -1.0
         elif self.scored:
-            score = len(self.snake)
+            score = 1.0 #len(self.snake)
         else:
-            score = 0
+            score = 0.0
         return score
 
     def reset(self):
