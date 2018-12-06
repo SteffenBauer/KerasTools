@@ -117,7 +117,7 @@ class Agent:
                 score += game_score
                 for c in callbacks: c.game_over()
             if loss_count > 0: loss /= float(loss_count)
-            print(" Loss {:.4f} | Win {:5.2%} | Avg Score {: 5.2f} | Store {:>5d}".format(loss, float(win_count)/float(episodes), float(score)/float(episodes), len(self.memory.memory)))
+            print("\nLoss {:.4f} | Win {:5.2%} | Avg Score {: 5.2f} | Store {:>5d}".format(loss, float(win_count)/float(episodes), float(score)/float(episodes), len(self.memory.memory)))
             if epsilon > final_epsilon and epoch >= observe:
                 epsilon = max(final_epsilon, epsilon - delta)
 
