@@ -66,22 +66,27 @@ class Snake(Game):
         self.snake.insert(0, p)
 
     def get_state(self):
-        canvas = np.zeros((self.grid_size, ) * 2)
-        canvas[:,:] = 0.9
-        canvas[1:-1, 1:-1] = 0.0
-        for seg in self.snake:
-            canvas[seg[0], seg[1]] = 0.7
-        canvas[self.snake[0][0], self.snake[0][1]] = 0.5
+        canvas = np.zeros((self.grid_size,self.grid_size,3))
+        canvas[:,:,0] = 1.0             # Red Border
+        canvas[1:-1, 1:-1, :] = 0.0     # Black background
+        for seg in self.snake:          # Yellow snake body
+            canvas[seg[0], seg[1], 0] = 1.0
+            canvas[seg[0], seg[1], 1] = 1.0
+                                        # Green snake head
+        canvas[self.snake[0][0], self.snake[0][1], 1] = 1.0
+                                        # Purple snake head if bitten
         if self.self_bite() or self.hit_border():
-            canvas[self.snake[0][0], self.snake[0][1]] = 0.8
-        canvas[self.fruit[0], self.fruit[1]] = 0.2
+            canvas[self.snake[0][0], self.snake[0][1], 0] = 1.0
+            canvas[self.snake[0][0], self.snake[0][1], 2] = 1.0
+                                        # Blue fruit
+        canvas[self.fruit[0], self.fruit[1], 2] = 1.0
         return canvas
 
     def get_score(self):
         if self.self_bite() or self.hit_border():
             score = -1.0
         elif self.scored:
-            score = len(self.snake)
+            score = 1.0 # len(self.snake)
         else:
             score = 0.0
         return score
