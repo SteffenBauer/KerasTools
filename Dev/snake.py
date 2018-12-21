@@ -26,6 +26,7 @@ class Snake(Game):
         self.turn += 1
         self.move_snake(action)
         if self.self_bite() or self.hit_border() or (self.max_turn > 0 and self.turn >= self.max_turn):
+            self.snake.pop()
             self.game_over = True
         elif self.fruit != self.snake[0]:
             self.snake.pop()
@@ -73,10 +74,12 @@ class Snake(Game):
             canvas[seg[0], seg[1], 0] = 1.0
             canvas[seg[0], seg[1], 1] = 1.0
                                         # Green snake head
+        canvas[self.snake[0][0], self.snake[0][1], 0] = 0.0
         canvas[self.snake[0][0], self.snake[0][1], 1] = 1.0
                                         # Purple snake head if bitten
         if self.self_bite() or self.hit_border():
             canvas[self.snake[0][0], self.snake[0][1], 0] = 1.0
+            canvas[self.snake[0][0], self.snake[0][1], 1] = 0.0
             canvas[self.snake[0][0], self.snake[0][1], 2] = 1.0
                                         # Blue fruit
         canvas[self.fruit[0], self.fruit[1], 2] = 1.0
