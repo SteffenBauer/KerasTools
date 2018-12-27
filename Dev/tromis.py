@@ -1,7 +1,7 @@
 import random
 import numpy as np
-#from .game import Game
-from game import Game
+from .game import Game
+#from game import Game
 
 actions = {0:'move-left', 1:'move-right', 2:'skip', '3':'rotate-left', '4':'rotate-right'}
 
@@ -76,7 +76,7 @@ class Tromis(Game):
             else:
                 break
             self.grid = [[0 for _ in range(self.width)]] + self.grid[0:i] + self.grid[i+1:]
-            self.removed_rows += 1
+            self.removed_rows = 1
 
     def play(self, action):
         if self.lost:
@@ -115,10 +115,16 @@ class Tromis(Game):
         return self.removed_rows
 
     def get_state(self):
-        canvas = np.asarray(self.grid).astype('float32')
-        color = 0.5 if not self.lost else 0.25 # if self.p_type == 0 else 1.0
+        canvas = np.zeros((self.height,self.width,3))
+        for i in range(len(self.grid)):
+            for j in range(len(self.grid[i])):
+                if self.grid[i][j] == 1:
+                    canvas[i,j,:] = (1,1,0)
+        if self.lost: color = (1,0,0)
+        elif self.p_type == 0: color = (0,0,1)
+        else: color = (0,1,0)
         for r,c in self.trominos[self.p_type][self.p_orient]:
-            canvas[self.p_row+r][self.p_column+c] = color
+            canvas[self.p_row+r,self.p_column+c,:] = color
         return canvas
     
     def is_over(self):
