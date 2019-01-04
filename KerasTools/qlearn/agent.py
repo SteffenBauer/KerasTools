@@ -79,7 +79,7 @@ class Agent:
         nb_actions = self.model.get_output_shape_at(0)[-1]
 
         for epoch in range(epochs):
-            win_count, loss, score, loss_count, play_count = 0, 0.0, 0, 0, 0
+            win_count, loss, score, max_score, loss_count, play_count = 0, 0.0, 0, -1000, 0, 0
             if reset_memory: self.reset_memory()
             for episode in range(episodes):
                 game.reset()
@@ -115,9 +115,10 @@ class Agent:
                 if game.is_won():
                     win_count += 1
                 score += game_score
+                if game_score > max_score: max_score = game_score
                 for c in callbacks: c.game_over()
             if loss_count > 0: loss /= float(loss_count)
-            print("\nLoss {:.4f} | Win {:5.2%} | Avg Score {: 5.2f} | Store {:>5d}".format(loss, float(win_count)/float(episodes), float(score)/float(episodes), len(self.memory.memory)))
+            print(" Loss {:.4f} | Win {:5.2%} | Avg/Max Score {: 5.2f}/{: 5.2f} | Store {:>5d}".format(loss, float(win_count)/float(episodes), float(score)/float(episodes), float(max_score), len(self.memory.memory)))
             if epsilon > final_epsilon and epoch >= observe:
                 epsilon = max(final_epsilon, epsilon - delta)
 

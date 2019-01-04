@@ -26,6 +26,7 @@ class Snake(Game):
         self.turn += 1
         self.move_snake(action)
         if self.self_bite() or self.hit_border() or (self.max_turn > 0 and self.turn >= self.max_turn):
+            self.snake.pop()
             self.game_over = True
         elif self.fruit != self.snake[0]:
             self.snake.pop()
@@ -66,22 +67,34 @@ class Snake(Game):
         self.snake.insert(0, p)
 
     def get_state(self):
-        canvas = np.zeros((self.grid_size, ) * 2)
-        canvas[:,:] = 0.9
-        canvas[1:-1, 1:-1] = 0.0
+        canvas = np.zeros((self.grid_size,self.grid_size,3))
+
+        # Red border
+        canvas[0,:,:] = (1,0,0)
+        canvas[:,0,:] = (1,0,0)
+        canvas[-1,:,:] = (1,0,0)
+        canvas[:,-1,:] = (1,0,0)
+
+        # Yellow snake body
         for seg in self.snake:
-            canvas[seg[0], seg[1]] = 0.7
-        canvas[self.snake[0][0], self.snake[0][1]] = 0.5
+            canvas[seg[0], seg[1], :] = (1,1,0)
+
+        # Green snake head
+        canvas[self.snake[0][0], self.snake[0][1], :] = (0,1,0)
+
+        # Purple snake head if bitten
         if self.self_bite() or self.hit_border():
-            canvas[self.snake[0][0], self.snake[0][1]] = 0.8
-        canvas[self.fruit[0], self.fruit[1]] = 0.2
+            canvas[self.snake[0][0], self.snake[0][1], :] = (1,0,1)
+
+        # Blue fruit
+        canvas[self.fruit[0], self.fruit[1], :] = (0,0,1)
         return canvas
 
     def get_score(self):
         if self.self_bite() or self.hit_border():
             score = -1.0
         elif self.scored:
-            score = 1.0 #len(self.snake)
+            score = 1.0 # len(self.snake)
         else:
             score = 0.0
         return score
@@ -100,15 +113,6 @@ class Snake(Game):
         self.border = []
         for z in range(grid_size):
             self.border += [(z, 0), (z, grid_size - 1), (0, z), (grid_size - 1, z)]
-
-    def left(self):
-        self.play(0)
-
-    def right(self):
-        self.play(1)
-
-    def forward(self):
-        self.play(2)
 
     def self_bite(self):
         return len(self.snake) > len(set(self.snake))

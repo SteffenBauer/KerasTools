@@ -38,16 +38,15 @@ class Catch(Game):
         self.penalty = 0.0 if action == 1 else -0.1
 
     def get_state(self):
-        im_size = (self.grid_size,) * 2
         fy, fx, basket = self.state
-        canvas = np.zeros(im_size)
-        canvas[-1, basket-1:basket + 2] = 0.7
+        canvas = np.zeros((self.grid_size,self.grid_size,3))
+        canvas[-1, basket-1:basket + 2, :] = (1,1,0)
         if self.is_won():
-            canvas[fy, fx] = 0.5
+            canvas[fy, fx, :] = (0,1,0)
         elif self.is_over():
-            canvas[fy, fx] = 0.9
+            canvas[fy, fx, :] = (1,0,0)
         else:
-            canvas[fy, fx] = 0.7
+            canvas[fy, fx, :] = (1,1,0)
 
         return canvas
 

@@ -42,6 +42,12 @@ _mapping = {
               'Tank', 'Telephone', 'Television', 'Tiger', 'Tractor', 
               'Train', 'Trout', 'Tulips', 'Turtle', 'Wardrobe', 
               'Whale', 'Willow', 'Wolf', 'Woman', 'Worm'],
+           "reuters":
+             ['cocoa','grain','veg-oil','earn','acq','wheat','copper','housing','money-supply',
+              'coffee','sugar','trade','reserves','ship','cotton','carcass','crude','nat-gas',
+              'cpi','money-fx','interest','gnp','meal-feed','alum','oilseed','gold','tin',
+              'strategic-metal','livestock','retail','ipi','iron-steel','rubber','heat','jobs',
+              'lei','bop','zinc','orange','pet-chem','dlr','gas','silver','wpi','hog','lead'],
            "boston":
              ["CRIM - per capita crime rate by town",
               "ZN - proportion of residential land zoned for lots over 25,000 sq.ft.",
@@ -63,13 +69,13 @@ def decode_dataset(dataset, code):
     """Returns the string description of a Keras dataset label code
    
     # Arguments
-        dataset: 'mnist', 'fmnist', 'cifar10', 'cifar100_coarse' or 'cifar100_fine'
+        dataset: 'mnist', 'fmnist', 'reuters', 'cifar10', 'cifar100_coarse' or 'cifar100_fine'
         code: Integer code of the label.
        
     # Returns
         The corresponding description as a string
     """
-    if dataset not in ['mnist', 'fmnist', 'cifar10', 'cifar100_coarse', 'cifar100_fine']:
+    if dataset not in _mapping.keys():
          raise ValueError('`decode_predictions` expects '
                           'a valid dataset '
                           'Requested dataset: ' + str(dataset))
@@ -82,7 +88,7 @@ def decode_predictions(dataset, preds, top=3):
     """Decodes the prediction of an Keras dataset model.
 
     # Arguments
-        dataset: 'mnist', 'fmnist', 'cifar10', 'cifar100_coarse' or 'cifar100_fine'
+        dataset: 'mnist', 'fmnist', 'reuters', 'cifar10', 'cifar100_coarse' or 'cifar100_fine'
         preds: Numpy tensor encoding a batch of predictions.
         top: Integer, how many top-guesses to return.
 
@@ -96,16 +102,17 @@ def decode_predictions(dataset, preds, top=3):
             (must be 2D).
                     In case of invalid requested dataset.
     """
-    if dataset not in ['mnist', 'fmnist', 'cifar10', 'cifar100_coarse', 'cifar100_fine']:
+    if dataset not in _mapping.keys():
         raise ValueError('`decode_predictions` expects '
                          'a valid dataset '
                          'Requested dataset: ' + str(dataset))
     
-    if len(preds.shape) != 2 or preds.shape[1] != 10:
+    if len(preds.shape) != 2 or preds.shape[1] != len(_mapping[dataset]):
         raise ValueError('`decode_predictions` expects '
                          'a batch of predictions '
-                         '(i.e. a 2D array of shape (samples, 10)). '
-                         'Found array with shape: ' + str(preds.shape))
+                         '(i.e. a 2D array of shape (samples, {})). '
+                         'Found array with shape: {}'.format(
+                           len(_mapping[dataset]), str(preds.shape)))
     results = []
     for pred in preds:
         top_indices = pred.argsort()[-top:][::-1]
