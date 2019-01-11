@@ -33,7 +33,9 @@ class Snake(Game):
         else:
             self.scored = True
             self.drop_fruit()
-
+        
+        return self.get_score()
+            
     def drop_fruit(self):
         if len(self.snake) >= (self.grid_size - 2) ** 2:
             self.fruit = (-1, -1)
@@ -92,11 +94,11 @@ class Snake(Game):
 
     def get_score(self):
         if self.self_bite() or self.hit_border():
-            score = -1.0
+            score = -1
         elif self.scored:
-            score = 1.0 # len(self.snake)
+            score = 1 # len(self.snake)
         else:
-            score = 0.0
+            score = 0
         return score
 
     def reset(self):
