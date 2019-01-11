@@ -232,7 +232,15 @@ class Tromis(Game):
         self.grid = [[0 for _ in range(self.width)] for _ in range(self.height)]
         self._new_piece()
         self.drop_counter = 2
-
+    
+    #                #                 #
+    # 0/0  ###  0/1  #  0/2  ###  0/3  #
+    #                #                 #
+    #
+    # 1/0  ##  1/1 #  1/2  #  1/3 ##
+    #      #       ##     ##       #
+    #
+    
     trominos = ( 
                  ( ((0,0), (0,-1), (0,1)),
                    ((0,0), (-1,0), (1,0)),
@@ -266,20 +274,23 @@ class Tromis(Game):
         return True
 
     def _remove_completed_rows(self):
-        self.removed_rows = 0
+        removed_rows = 0
         while True:
             for i in range(len(self.grid)):
                 if all(self.grid[i]): break
             else:
                 break
             self.grid = [[0 for _ in range(self.width)]] + self.grid[0:i] + self.grid[i+1:]
-            self.removed_rows = 1
-
+            removed_rows += 1
+        return removed_rows
+        
     def play(self, action):
+        if not self._valid_position(self.p_row, self.p_column, self.p_orient):
+            self.lost = True
+
         if self.lost:
             return
-        nrow,ncol,nori = self.p_row, self.p_column, self.p_orient
-        
+            
         actions = [lambda r,c,o: (r,c-1,o),
                    lambda r,c,o: (r,c+1,o),
                    lambda r,c,o: (r,c,o),
@@ -293,13 +304,12 @@ class Tromis(Game):
         if not self._valid_position(self.p_row+1, self.p_column, self.p_orient):
             for r,c in self.trominos[self.p_type][self.p_orient]:
                 self.grid[self.p_row+r][self.p_column+c] = 1
-            self._remove_completed_rows()
+            self.removed_rows = self._remove_completed_rows()
             self._new_piece()
         else:
             self.p_row += 1
+            self.removed_rows = 0
         
-        if not self._valid_position(self.p_row, self.p_column, self.p_orient):
-            self.lost = True
         self.turn += 1
         
         return self.get_score()
@@ -332,7 +342,6 @@ class Tromis(Game):
 
     def is_won(self):
         return self.is_over() and not self.lost
-
 
 class Memory:
 
