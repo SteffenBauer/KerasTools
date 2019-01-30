@@ -92,7 +92,7 @@ class Tromis(Game):
             else:
                 break
             self.grid = [[0 for _ in range(self.width)]] + self.grid[0:i] + self.grid[i+1:]
-            removed_rows = 1
+            removed_rows += 1
         return removed_rows
         
     def play(self, action):
