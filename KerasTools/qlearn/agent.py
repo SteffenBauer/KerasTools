@@ -67,9 +67,9 @@ class Agent:
     def clear_frames(self):
         self.frames = None
 
-    def train(self, game, epochs=1, episodes=256, batch_size=32, train_interval=32, 
-            gamma=0.9, epsilon=[1., .1], epsilon_rate=0.5, 
-            reset_memory=False, observe=0, callbacks=[]):
+    def train(self, game, epochs=1, initial_epoch=1, episodes=256,
+              batch_size=32, train_interval=32, gamma=0.9, epsilon=[1., .1],
+              epsilon_rate=0.5, reset_memory=False, observe=0, callbacks=[]):
         self.check_game_compatibility(game)
         if type(epsilon)  in {tuple, list}:
             delta =  ((epsilon[0] - epsilon[1]) / (epochs * epsilon_rate))
@@ -78,7 +78,7 @@ class Agent:
             final_epsilon = epsilon
         nb_actions = self.model.get_output_shape_at(0)[-1]
 
-        for epoch in range(epochs):
+        for epoch in range(initial_epoch, epochs+1):
             win_count, loss, score, max_score, loss_count, play_count = 0, 0.0, 0, -1000, 0, 0
             if reset_memory: self.reset_memory()
             for episode in range(episodes):
@@ -109,7 +109,7 @@ class Agent:
                             inputs, targets = batch
                             loss += float(self.model.train_on_batch(inputs, targets))
                             loss_count += 1
-                        state = "Epoch {:>4d}/{:>4d} | Epsilon {:.2f} | Episode {:>3d}/{:>3d} ".format(epoch + 1, epochs, epsilon, episode+1, episodes)
+                        state = "Epoch {:>4d}/{:>4d} | Epsilon {:.2f} | Episode {:>3d}/{:>3d} ".format(epoch, epochs, epsilon, episode+1, episodes)
                         update_progress(state, float(episode+1)/float(episodes))
 
                 if game.is_won():
@@ -118,7 +118,11 @@ class Agent:
                 if game_score > max_score: max_score = game_score
                 for c in callbacks: c.game_over()
             if loss_count > 0: loss /= float(loss_count)
-            print(" Loss {:.4f} | Win {:5.2%} | Avg/Max Score {: 5.2f}/{: 5.2f} | Store {:>5d}".format(loss, float(win_count)/float(episodes), float(score)/float(episodes), float(max_score), len(self.memory.memory)))
+            win_ratio = float(win_count)/float(episodes)
+            avg_score = float(score)/float(episodes)
+            
+            print(" Loss {:.4f} | Win {:5.2%} | Avg/Max Score {: 5.2f}/{: 5.2f} | Store {:>5d}".format(loss, win_ratio, avg_score, float(max_score), len(self.memory.memory)))
+            for c in callbacks: c.epoch_end(self.model, game.name, epoch, epsilon, loss, win_ratio, avg_score, max_score, len(self.memory.memory))
             if epsilon > final_epsilon and epoch >= observe:
                 epsilon = max(final_epsilon, epsilon - delta)
 
