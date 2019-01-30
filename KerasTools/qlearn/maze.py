@@ -1,7 +1,6 @@
 import random
 import numpy as np
-#from .game import Game
-from game import Game
+from .game import Game
 
 actions = {0:'left', 1:'right', 2:'up', '3':'down'}
 
@@ -10,14 +9,14 @@ class Maze(Game):
         self.width = 5
         self.height = 5
         self.reset()
-        
+
     @property
     def name(self):
         return "Maze"
     @property
     def nb_actions(self):
         return 4
-    
+
     def reset(self):
         self.grid = [[0 for i in range(self.width)] for j in range(self.height)]
         barriers = ((0,2),(2,1),(2,2),(2,3),(2,4),(4,0),(4,3))
@@ -54,12 +53,12 @@ class Maze(Game):
         if self.won: return 1
         if self.bumped: return -0.5
         return -0.1
-    
+
     def get_state(self):
         canvas = np.asarray(self.grid).astype('float32')
         canvas[self.x][self.y] = 4.0
         return canvas/4.0
-    
+
     def is_over(self):
         return self.fallen or self.won
 
