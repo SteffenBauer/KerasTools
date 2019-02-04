@@ -109,9 +109,9 @@ class Tromis(Game):
         return self.get_score()
 
     def get_score(self):
-        if self.is_over() and self.lost:
+        if self.lost:
             return -1
-        elif self.is_over():
+        elif self.is_won():
             return 1
         return self.removed_rows
 
