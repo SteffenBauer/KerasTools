@@ -1,3 +1,5 @@
+import time
+
 class Callback(object):
     def game_start(self, frame): pass
     def game_frame(self, frame): pass
