@@ -34,14 +34,14 @@ class Agent(object):
                 F = game.get_frame()
                 S = [F]*self.num_frames
                 while True:
-                    action = self.act(game, np.asarray(S), epsilon)
+                    action = self.act(game, S, epsilon)
                     Fn, r, game_over = game.play(action)
                     Sn = S[1:] + [Fn]
-                    self.memory.remember(np.asarray(S), action, r, np.asarray(Sn), game_over)
+                    self.memory.remember(S, action, r, Sn, game_over)
                     S = Sn
                     turn_count += 1
                     if (turn_count > train_interval) or (episode == episodes-1 and game_over):
-                        self.replay(losses, gamma, batch_size)
+                        self.replay(losses, gamma, batch_size, game.nb_actions)
                         turn_count = 0
                         update_progress("{} {}".format(epoch, episode), float(episode+1)/episodes)
                     if game_over:
@@ -52,22 +52,25 @@ class Agent(object):
     def act(self, game, state, epsilon=0.0):
         if random.random() <= epsilon:
             return random.randrange(game.nb_actions)
-        act_values = self.model.predict(np.expand_dims(state, axis=0), batch_size=1)
+        act_values = self.model.predict(np.expand_dims(np.asarray(state), axis=0))
         return np.argmax(act_values[0])  # returns action
 
-    def replay(self, losses, gamma, batch_size):
+    def replay(self, losses, gamma, batch_size, actions):
+        states, targets = self.create_training_set(batch_size, gamma)
+        losses.append(self.model.train_on_batch(np.asarray(states), np.asarray(targets)))
+    
+    def create_training_set(self, batch_size, gamma):
         batch = self.memory.get_batch(self.model, batch_size)
         states, targets = [], []
         for state, action, reward, next_state, game_over in batch:
             if not game_over:
-                Sn = np.expand_dims(next_state, axis=0)
-                reward = (reward + gamma * np.amax(self.model.predict(Sn, batch_size=1)[0]))
-            target = self.model.predict(np.expand_dims(state, axis=0))
-            target[0][action] = reward 
+                reward += gamma * np.amax(self.model.predict(np.expand_dims(next_state, axis=0))[0])
+            target = self.model.predict(np.expand_dims(state, axis=0))[0]
+            target[action] = reward 
             states.append(state)
-            targets.append(target[0])
-        losses.append(self.model.train_on_batch(np.asarray(states), np.asarray(targets)))
-        
+            targets.append(target)
+        return states, targets
+    
 if __name__ == '__main__':
     pass
 

@@ -4,6 +4,9 @@ import keras
 import catch
 import agent
 
+import cProfile
+import pstats
+
 grid_size = 16
 nb_frames = 2
 
@@ -20,7 +23,14 @@ model.compile(keras.optimizers.rmsprop(), 'logcosh')
 model.summary()
 
 a = agent.Agent(model=model, memory_size=65536, num_frames = nb_frames)
-a.train(game, batch_size=256, epochs=10, train_interval=32, episodes=256,
+
+pr = cProfile.Profile()
+pr.enable()
+
+a.train(game, batch_size=256, epochs=1, train_interval=32, episodes=32,
             epsilon=0.1, #epsilon=[0.5, 0.0], epsilon_rate=0.2, 
             gamma=0.99, reset_memory=False)
-      
+pr.disable()
+stats = pstats.Stats(pr).sort_stats('cumulative')
+stats.print_stats('agent|memory')
+
