@@ -16,7 +16,7 @@ class Memory:
 
 class ExperienceReplay(Memory):
 
-    def __init__(self, memory_size=100, fast=True):
+    def __init__(self, memory_size=100, fast=False):
         self.fast = fast
         self.memory = []
         self._memory_size = memory_size

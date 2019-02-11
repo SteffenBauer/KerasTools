@@ -25,7 +25,7 @@ class Snake(Game):
         self.scored = False
         self.turn += 1
         self.move_snake(action)
-        if self.self_bite() or self.hit_border() or (self.max_turn > 0 and self.turn >= self.max_turn):
+        if self.is_over():
             self.snake.pop()
             self.game_over = True
         elif self.fruit != self.snake[0]:
@@ -93,10 +93,10 @@ class Snake(Game):
         return canvas
 
     def get_score(self):
-        if self.self_bite() or self.hit_border():
+        if self.is_won() or self.scored:
+            score = 1
+        elif self.had_bumped():
             score = -1
-        elif self.scored:
-            score = 1 # len(self.snake)
         else:
             score = 0
         return score
@@ -122,12 +122,18 @@ class Snake(Game):
     def hit_border(self):
         return self.snake[0] in self.border
 
+    def had_bumped(self):
+        return self.self_bite() or self.hit_border()
+
+    def timeout(self):
+        return (self.max_turn > 0) and (self.turn >= self.max_turn)
+
     def is_over(self):
-        return self.self_bite() or self.hit_border() or (self.max_turn > 0 and self.turn >= self.max_turn)
+        return self.had_bumped() or self.timeout()
+
+    def has_eaten(self):
+        return len(self.snake) > self.snake_length
 
     def is_won(self):
-        if self.max_turn > 0:
-            return self.turn >= self.max_turn
-        else:
-            return len(self.snake) > self.snake_length
+        return self.is_over() and not self.had_bumped() and self.has_eaten()
 
