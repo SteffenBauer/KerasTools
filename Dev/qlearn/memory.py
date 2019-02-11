@@ -26,7 +26,7 @@ class BasicMemory(Memory):
         return random.sample(self.memory, batch_size)
 
     def reset(self):
-        self.memory = set()
+        self.memory = list()
 
 class UniqMemory(Memory):
     def __init__(self, memory_size=65536):
@@ -48,7 +48,8 @@ class UniqMemory(Memory):
         return [e[0] for e in random.sample(self.memory, batch_size)]
 
     def reset(self):
-        self.memory = set()
+        self.memory = list()
+        self.hashes = set()
 
 if __name__ == '__main__':
     pass

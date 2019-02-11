@@ -37,7 +37,7 @@ class Agent(object):
             for episode in range(episodes):
                 game.reset()
                 F = np.expand_dims(game.get_frame(), axis=0)
-                S = np.repeat(F, self.num_frames, axis=0) #np.asarray([F]*self.num_frames)
+                S = np.repeat(F, self.num_frames, axis=0)
                 current_score = 0.0
                 while True:
                     action = self.act(game, S, epsilon)
