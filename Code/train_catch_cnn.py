@@ -85,5 +85,4 @@ agent.train(game, batch_size=256, epochs=10, train_interval=32, episodes=256,
 pr.disable()
 stats = pstats.Stats(pr).sort_stats('cumulative')
 stats.print_stats('agent|memory|model')
-#stats.print_stats(10)
 

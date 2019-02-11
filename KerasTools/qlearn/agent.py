@@ -120,8 +120,7 @@ class Agent:
             if loss_count > 0: loss /= float(loss_count)
             win_ratio = float(win_count)/float(episodes)
             avg_score = float(score)/float(episodes)
-            
-            print(" Loss {: .4f} | Win {: 5.2%} | Avg/Max Score {: 5.2f}/{: 5.2f} | Store {:>5d} | Loss count {:>5d}".format(loss, win_ratio, avg_score, float(max_score), len(self.memory.memory), loss_count))
+            print(" Loss {: .4f} | Win {: 5.2%} | Avg/Max Score {: 5.2f}/{: 5.2f} | Store {:>5d}".format(loss, win_ratio, avg_score, float(max_score), len(self.memory.memory)))
             for c in callbacks: c.epoch_end(self.model, game.name, epoch, epsilon, loss, win_ratio, avg_score, max_score, len(self.memory.memory))
             if epsilon > final_epsilon and epoch >= observe:
                 epsilon = max(final_epsilon, epsilon - delta)
