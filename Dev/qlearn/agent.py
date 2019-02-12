@@ -56,12 +56,12 @@ class Agent(object):
                         scores.append(current_score)
                         if game.is_won(): win_count += 1
                         break
-            print " | Loss {0: 2.4f} | Win {1:>7.2%} | Avg/Max Score {2: 4.2f}/{3: 4.2f} | Mem {4: 6d}".format(
+            print(" | Loss {0: 2.4f} | Win {1:>7.2%} | Avg/Max Score {2: 4.2f}/{3: 4.2f} | Mem {4: 6d}".format(
                 sum(losses)/len(losses), 
                 float(win_count)/float(episodes), 
                 sum(scores)/float(episodes),
                 max(scores),
-                len(self.memory.memory))
+                len(self.memory.memory)))
             if epsilon > final_epsilon and delta:
                 epsilon = max(final_epsilon, epsilon - delta)
 

@@ -1,21 +1,23 @@
 #!/usr/bin/env python
 
 import keras
-import catch
+import snake
 import agent
 import memory
 
 #import cProfile
 #import pstats
 
-grid_size = 16
+grid_size = 10
 nb_frames = 2
 
-game = catch.Catch(grid_size)
+game = snake.Snake(grid_size, max_turn=64)
 
 inp = keras.layers.Input(shape=(nb_frames, grid_size, grid_size, 3))
 gray = keras.layers.Lambda(lambda t:t[...,0]*0.3 + t[...,1]*0.6 + t[...,2]*0.1)(inp)
-flat = keras.layers.Flatten()(gray)
+perm = keras.layers.Permute((2,3,1))(gray)
+conv = keras.layers.Conv2D(32, 3, activation='relu')(perm)
+flat = keras.layers.Flatten()(conv)
 x = keras.layers.Dense(128, activation='relu')(flat)
 act = keras.layers.Dense(game.nb_actions, activation='linear')(x)
 
