@@ -1,25 +1,6 @@
 import random
 import numpy as np
-
-class Game(object):
-    def __init__(self): self.reset()
-
-    @property
-    def name(self): return "Game"
-    @property
-    def nb_actions(self): return 0
-
-    def reset(self): pass
-    def play(self, action): pass
-    def get_state(self): return None
-    def get_score(self): return 0
-    def is_over(self): return False
-    def is_won(self): return False
-    def get_frame(self): return self.get_state()
-    def draw(self): return self.get_state()
-    def get_possible_actions(self): return range(self.nb_actions)
-
-actions = {0:'move-left', 1:'move-right', 2:'skip', '3':'rotate-left', '4':'rotate-right'}
+from game import Game
 
 class Tromis(Game):
 
@@ -30,12 +11,12 @@ class Tromis(Game):
         self.reset()
 
     @property
-    def name(self):
-        return "Tromis"
+    def name(self):       return "Tromis"
     @property
-    def nb_actions(self):
-        return 5
-        
+    def nb_actions(self): return 5
+    @property
+    def actions(self):    return {0:'move-left', 1:'move-right', 2:'skip', '3':'rotate-left', '4':'rotate-right'}
+    
     def reset(self):
         self.lost = False
         self.turn = 0
@@ -43,17 +24,8 @@ class Tromis(Game):
         self.grid = [[0 for _ in range(self.width)] for _ in range(self.height)]
         self._new_piece()
         self.drop_counter = 2
-    
-    #                #                 #
-    # 0/0  ###  0/1  #  0/2  ###  0/3  #
-    #                #                 #
-    #
-    # 1/0  ##  1/1 #  1/2  #  1/3 ##
-    #      #       ##     ##       #
-    #
-    
-    trominos = ( 
-                 ( ((0,0), (0,-1), (0,1)),
+
+    trominos = ( ( ((0,0), (0,-1), (0,1)),
                    ((0,0), (-1,0), (1,0)),
                    ((0,0), (0,-1), (0,1)),
                    ((0,0), (-1,0), (1,0))
@@ -62,8 +34,7 @@ class Tromis(Game):
                    ((0,0), (1,0), (1,1)),
                    ((0,1), (1,0), (1,1)),
                    ((0,0), (0,1), (1,1))
-                 )
-               )
+                 ) )
     
     def _new_piece(self):
         self.p_type = random.randrange(2)
@@ -96,11 +67,12 @@ class Tromis(Game):
         return removed_rows
         
     def play(self, action):
+        if self.is_over() or (action not in range(self.nb_actions)):
+            return
+
         if not self._valid_position(self.p_row, self.p_column, self.p_orient):
             self.lost = True
-
-        if self.lost:
-            return
+            return (self.get_frame(), self.get_score(), self.is_over())
             
         actions = [lambda r,c,o: (r,c-1,o),
                    lambda r,c,o: (r,c+1,o),
@@ -122,13 +94,13 @@ class Tromis(Game):
             self.removed_rows = 0
         
         self.turn += 1
-        
-        return self.get_score()
+
+        return (self.get_frame(), self.get_score(), self.is_over())
 
     def get_score(self):
-        if self.is_over() and self.lost:
+        if self.lost:
             return -1
-        elif self.is_over():
+        elif self.is_won():
             return 1
         return self.removed_rows
 

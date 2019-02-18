@@ -6,9 +6,11 @@ class Game(object):
     def name(self): return "Game"
     @property
     def nb_actions(self): return 0
+    @property
+    def actions(self): return dict()
 
     def reset(self): pass
-    def play(self, action): return (self.get_score(), self.is_over())
+    def play(self, action): return (self.get_frame(), self.get_score(), self.is_over())
     def get_state(self): return None
     def get_score(self): return 0
     def is_over(self): return False
