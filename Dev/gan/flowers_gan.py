@@ -3,7 +3,6 @@
 
 from __future__ import print_function, division
 
-from keras.datasets import mnist
 from keras.layers import Input, Dense, Reshape, Flatten, Dropout
 from keras.layers import BatchNormalization, Activation, ZeroPadding2D
 from keras.layers.advanced_activations import LeakyReLU
@@ -11,18 +10,21 @@ from keras.layers.convolutional import UpSampling2D, Conv2D
 from keras.models import Sequential, Model
 from keras.optimizers import Adam
 from keras.engine.network import Network
+import keras_preprocessing
 
 import matplotlib.pyplot as plt
 import sys
 import numpy as np
 import json
+import glob
+import cv2 
 
 class DCGAN():
     def __init__(self):
         # Input shape
-        self.img_rows = 28
-        self.img_cols = 28
-        self.channels = 1
+        self.img_rows = 64
+        self.img_cols = 64
+        self.channels = 3
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
         self.latent_dim = 16
 
@@ -58,10 +60,10 @@ class DCGAN():
 
         noise = Input(shape=(self.latent_dim,))
 
-        x = Dense(128 * 4 * 4, activation="relu")(noise)
-        x = Reshape((4, 4, 128))(x)
+        x = Dense(256 * 4 * 4, activation="relu")(noise)
+        x = Reshape((4, 4, 256))(x)
         x = UpSampling2D()(x)
-        x = Conv2D(128, kernel_size=3, padding="valid")(x)
+        x = Conv2D(128, kernel_size=3, padding="same")(x)
         x = BatchNormalization(momentum=0.8)(x)
         x = Activation("relu")(x)
         x = UpSampling2D()(x)
@@ -70,6 +72,10 @@ class DCGAN():
         x = Activation("relu")(x)
         x = UpSampling2D()(x)
         x = Conv2D(32, kernel_size=3, padding="same")(x)
+        x = BatchNormalization(momentum=0.8)(x)
+        x = Activation("relu")(x)
+        x = UpSampling2D()(x)
+        x = Conv2D(16, kernel_size=3, padding="same")(x)
         x = BatchNormalization(momentum=0.8)(x)
         x = Activation("relu")(x)
         x = Conv2D(self.channels, kernel_size=3, padding="same")(x)
@@ -103,15 +109,15 @@ class DCGAN():
         return img, validity
 
     def train(self, epochs, batch_size=128, save_interval=50):
-
-        # Load the dataset
-        (X_train, Y_train), (_, _) = mnist.load_data()
-
-        X_train = X_train[Y_train.flatten() == 8]
-
-        # Rescale -1 to 1
-        X_train = X_train / 127.5 - 1.
-        X_train = np.expand_dims(X_train, axis=3)
+        train_dir = '/home/sbauer/Work/Deep_Learning/Datasets/Images/17flowers/17flowers_64x64/'
+        train_datagen = keras_preprocessing.image.ImageDataGenerator(
+            preprocessing_function=lambda x:(x/127.5) - 1.0,
+            horizontal_flip=True,
+            rotation_range=20.0,
+            zoom_range=0.2)
+        real_generator = train_datagen.flow_from_directory(
+            train_dir, target_size=(self.img_rows, self.img_cols), 
+            batch_size=batch_size, class_mode='categorical', classes=['dandelion'])
 
         # Adversarial ground truths
         valid = np.ones((batch_size, 1))
@@ -131,12 +137,12 @@ class DCGAN():
             #  Train Discriminator
             # ---------------------
 
-            # Select a random half of images
-            idx = np.random.randint(0, X_train.shape[0], batch_size)
-            imgs = X_train[idx]
-
+            imgs = next(real_generator)[0]
+            valid = np.ones((imgs.shape[0], 1))
+            fake = np.zeros((imgs.shape[0], 1))
+            
             # Sample noise and generate a batch of new images
-            noise = np.random.normal(0, 1, (batch_size, self.latent_dim))
+            noise = np.random.normal(0, 1, (imgs.shape[0], self.latent_dim))
             gen_imgs = self.generator.predict(noise)
 
             # Train the discriminator (real classified as ones and generated as zeros)
@@ -174,9 +180,9 @@ class DCGAN():
                 'g_loss': loss_generator}
 
     def save_imgs(self, epoch):
-        r, c = 5, 5
+        r, c = 3, 3
         #noise = np.random.normal(0, 1, (r * c, self.latent_dim))
-        noise = np.asarray([[i/24.0]*self.latent_dim for i in range(25)])
+        noise = np.asarray([[i/float(r*c-1)]*self.latent_dim for i in range(r*c)])
         
         gen_imgs = self.generator.predict(noise)
 
@@ -187,16 +193,16 @@ class DCGAN():
         cnt = 0
         for i in range(r):
             for j in range(c):
-                axs[i,j].imshow(gen_imgs[cnt, :,:,0], cmap='gray')
+                axs[i,j].imshow(gen_imgs[cnt, :,:,:])
                 axs[i,j].axis('off')
                 cnt += 1
-        fig.savefig("images/mnist_{:05d}.png".format(epoch))
+        fig.savefig("images/flowers_{:05d}.png".format(epoch))
         plt.close()
 
 
 if __name__ == '__main__':
     dcgan = DCGAN()
-    history = dcgan.train(epochs=1000, batch_size=32, save_interval=100)
-    with open('mnist_gan.hist','w') as fp:
+    history = dcgan.train(epochs=10000, batch_size=32, save_interval=100)
+    with open('flowers_gan.hist','w') as fp:
         json.dump(history, fp)
 

@@ -24,7 +24,7 @@ class DCGAN():
         self.img_cols = 32
         self.channels = 3
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
-        self.latent_dim = 16
+        self.latent_dim = 32
 
         optimizer = Adam(0.0002, 0.5)
 
@@ -58,8 +58,12 @@ class DCGAN():
 
         noise = Input(shape=(self.latent_dim,))
 
-        x = Dense(128 * 8 * 8, activation="relu")(noise)
-        x = Reshape((8, 8, 128))(x)
+        x = Dense(512 * 4 * 4, activation="relu")(noise)
+        x = Reshape((4, 4, 512))(x)
+        x = UpSampling2D()(x)
+        x = Conv2D(256, kernel_size=3, padding="same")(x)
+        x = BatchNormalization(momentum=0.8)(x)
+        x = Activation("relu")(x)
         x = UpSampling2D()(x)
         x = Conv2D(128, kernel_size=3, padding="same")(x)
         x = BatchNormalization(momentum=0.8)(x)
@@ -77,19 +81,18 @@ class DCGAN():
 
         img = Input(shape=self.img_shape)
 
-        x = Conv2D(32, kernel_size=3, strides=2, padding="same")(img)
-        x = LeakyReLU(alpha=0.2)(x)
-        x = Dropout(0.25)(x)
-        x = Conv2D(64, kernel_size=3, strides=2, padding="same")(x)
-        x = ZeroPadding2D(padding=((0,1),(0,1)))(x)
-        x = BatchNormalization(momentum=0.8)(x)
+        x = Conv2D(64, kernel_size=3, strides=2, padding="same")(img)
         x = LeakyReLU(alpha=0.2)(x)
         x = Dropout(0.25)(x)
         x = Conv2D(128, kernel_size=3, strides=2, padding="same")(x)
         x = BatchNormalization(momentum=0.8)(x)
         x = LeakyReLU(alpha=0.2)(x)
         x = Dropout(0.25)(x)
-        x = Conv2D(256, kernel_size=3, strides=1, padding="same")(x)
+        x = Conv2D(256, kernel_size=3, strides=2, padding="same")(x)
+        x = BatchNormalization(momentum=0.8)(x)
+        x = LeakyReLU(alpha=0.2)(x)
+        x = Dropout(0.25)(x)
+        x = Conv2D(512, kernel_size=3, strides=1, padding="same")(x)
         x = BatchNormalization(momentum=0.8)(x)
         x = LeakyReLU(alpha=0.2)(x)
         x = Dropout(0.25)(x)
@@ -103,7 +106,7 @@ class DCGAN():
         # Load the dataset
         (X_train, Y_train), (_, _) = cifar10.load_data()
 
-        X_train = X_train[Y_train.flatten() == 7]
+        X_train = X_train[Y_train.flatten() == 2]
 
         # Rescale -1 to 1
         X_train = X_train / 127.5 - 1.
@@ -169,9 +172,9 @@ class DCGAN():
                 'g_loss': loss_generator}
 
     def save_imgs(self, epoch):
-        r, c = 5, 5
+        r, c = 2, 2
         #noise = np.random.normal(0, 1, (r * c, self.latent_dim))
-        noise = np.asarray([[i/24.0]*self.latent_dim for i in range(25)])
+        noise = np.asarray([[i/float((r*c)-1)]*self.latent_dim for i in range(r*c)])
         
         gen_imgs = self.generator.predict(noise)
 

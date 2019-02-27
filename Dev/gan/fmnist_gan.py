@@ -81,7 +81,7 @@ class DCGAN():
         x = LeakyReLU(alpha=0.2)(x)
         x = Dropout(0.25)(x)
         x = Conv2D(64, kernel_size=3, strides=2, padding="same")(x)
-        x = ZeroPadding2D(padding=((0,1),(0,1)))(x)
+        #x = ZeroPadding2D(padding=((0,1),(0,1)))(x)
         x = BatchNormalization(momentum=0.8)(x)
         x = LeakyReLU(alpha=0.2)(x)
         x = Dropout(0.25)(x)
@@ -103,7 +103,7 @@ class DCGAN():
         # Load the dataset
         (X_train, Y_train), (_, _) = fashion_mnist.load_data()
 
-        X_train = X_train[Y_train.flatten() == 8]
+        X_train = X_train[Y_train.flatten() == 7]
 
         # Rescale -1 to 1
         X_train = X_train / 127.5 - 1.
