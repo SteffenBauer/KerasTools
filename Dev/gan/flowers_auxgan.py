@@ -3,7 +3,7 @@
 
 from __future__ import print_function, division
 
-from keras.layers import Input, Dense, Reshape, Flatten, Dropout
+from keras.layers import Input, Dense, Reshape, Flatten, Dropout, Embedding, multiply
 from keras.layers import BatchNormalization, Activation, ZeroPadding2D
 from keras.layers.advanced_activations import LeakyReLU
 from keras.layers.convolutional import UpSampling2D, Conv2D
@@ -26,30 +26,30 @@ class DCGAN():
         self.channels = 3
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
         self.latent_dim = 16
+        self.num_classes = 17
 
         optimizer = Adam(0.0002, 0.5)
+        losses = ['binary_crossentropy','sparse_categorical_crossentropy']
 
         # Build and compile the discriminator
-        inp_discriminator, out_discriminator = self.build_discriminator()
-        self.discriminator = Model(inp_discriminator, out_discriminator, name='discriminator')
-        self.discriminator.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+        inp_discr, out_discr, lbl_discr = self.build_discriminator()
+        self.discriminator = Model(inp_discr, [out_discr, lbl_discr], name='discriminator')
+        self.discriminator.compile(loss=losses, optimizer=optimizer, metrics=['accuracy'])
 
         # Build the frozen discriminator copy
-        self.frozen_discriminator = Network(inp_discriminator, out_discriminator, name='frozen_discriminator')
+        self.frozen_discriminator = Network(inp_discr, [out_discr, lbl_discr], name='frozen_discriminator')
         self.frozen_discriminator.trainable = False
 
         # Build the generator
-        inp_generator, out_generator = self.build_generator()
-        self.generator = Model(inp_generator, out_generator, name='generator')
+        inp_gen, lbl_gen, out_gen = self.build_generator()
+        self.generator = Model([inp_gen, lbl_gen], out_gen, name='generator')
 
         # The combined model  (stacked generator and discriminator)
         # Trains the generator to fool the discriminator
         optimizer = Adam(0.0002, 0.5)
 
-        self.combined = Sequential()
-        self.combined.add(self.generator)
-        self.combined.add(self.frozen_discriminator)
-        self.combined.compile(loss='binary_crossentropy', optimizer=optimizer)
+        self.combined = Model([inp_gen, lbl_gen], [out_discr, lbl_discr])
+        self.combined.compile(loss=losses, optimizer=optimizer)
 
         self.discriminator.summary()
         self.generator.summary()
@@ -58,8 +58,12 @@ class DCGAN():
     def build_generator(self):
 
         noise = Input(shape=(self.latent_dim,))
-
-        x = Dense(256 * 4 * 4, activation="relu")(noise)
+        labels = Input(shape=(1,))
+        emb = Embedding(self.num_classes, self.latent_dim)(labels)
+        flt = Flatten()(emb)
+        inp = multiply([noise, flt])
+        
+        x = Dense(256 * 4 * 4, activation="relu")(inp)
         x = Reshape((4, 4, 256))(x)
         x = UpSampling2D()(x)
         x = Conv2D(128, kernel_size=3, padding="same")(x)
@@ -80,7 +84,7 @@ class DCGAN():
         x = Conv2D(self.channels, kernel_size=3, padding="same")(x)
         img = Activation("tanh")(x)
 
-        return noise, img
+        return noise, labels, img
 
     def build_discriminator(self):
 
@@ -103,9 +107,10 @@ class DCGAN():
         x = LeakyReLU(alpha=0.2)(x)
         x = Dropout(0.25)(x)
         x = Flatten()(x)
+        
         validity = Dense(1, activation='sigmoid')(x)
-
-        return img, validity
+        label = Dense(self.num_classes+1, activation="softmax")(x)
+        return img, validity, label
 
     def train(self, epochs, batch_size=128, save_interval=50):
         train_dir = '/home/sbauer/Work/Deep_Learning/Datasets/Images/17flowers/17flowers_64x64/'
@@ -115,12 +120,8 @@ class DCGAN():
             rotation_range=20.0,
             zoom_range=0.2)
         real_generator = train_datagen.flow_from_directory(
-            train_dir, target_size=(self.img_rows, self.img_cols), 
-            batch_size=batch_size, class_mode='categorical', classes=['dandelion'])
-
-        # Adversarial ground truths
-        valid = np.ones((batch_size, 1))
-        fake = np.zeros((batch_size, 1))
+            train_dir, target_size=(self.img_rows, self.img_cols),
+            batch_size=batch_size, class_mode='categorical')
 
         # History arrays
         loss_discriminator = []
@@ -136,17 +137,22 @@ class DCGAN():
             #  Train Discriminator
             # ---------------------
 
-            imgs = next(real_generator)[0]
+            imgs, img_labels = next(real_generator)
+    
+            # Adversarial ground truths
             valid = np.ones((imgs.shape[0], 1))
             fake = np.zeros((imgs.shape[0], 1))
             
             # Sample noise and generate a batch of new images
             noise = np.random.normal(0, 1, (imgs.shape[0], self.latent_dim))
-            gen_imgs = self.generator.predict(noise)
+            sampled_labels = np.random.randint(0, self.num_classes, (batch_size, 1))
+            gen_imgs = self.generator.predict([noise, sampled_labels])
 
             # Train the discriminator (real classified as ones and generated as zeros)
-            d_loss_real = self.discriminator.train_on_batch(imgs, valid)
-            d_loss_fake = self.discriminator.train_on_batch(gen_imgs, fake)
+            fake_labels = 10 * np.ones(img_labels.shape)
+            
+            d_loss_real = self.discriminator.train_on_batch(imgs, [valid, img_labels])
+            d_loss_fake = self.discriminator.train_on_batch(gen_imgs, [fake, fake_labels])
             d_loss = 0.5 * np.add(d_loss_real, d_loss_fake)
 
             # ---------------------
@@ -154,7 +160,7 @@ class DCGAN():
             # ---------------------
 
             # Train the generator (wants discriminator to mistake images as real)
-            g_loss = self.combined.train_on_batch(noise, valid)
+            g_loss = self.combined.train_on_batch([noise, sampled_labels], [valid, sampled_labels])
 
             # Plot the progress
             print ("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100*d_loss[1], g_loss))
@@ -179,11 +185,12 @@ class DCGAN():
                 'g_loss': loss_generator}
 
     def save_imgs(self, epoch):
-        r, c = 3, 3
+        r, c = 3, self.num_classes
         #noise = np.random.normal(0, 1, (r * c, self.latent_dim))
         noise = np.asarray([[i/float(r*c-1)]*self.latent_dim for i in range(r*c)])
+        sampled_labels = np.array([num for _ in range(r) for num in range(c)])
         
-        gen_imgs = self.generator.predict(noise)
+        gen_imgs = self.generator.predict([noise, sampled_labels])
 
         # Rescale images 0 - 1
         gen_imgs = 0.5 * gen_imgs + 0.5
@@ -195,13 +202,13 @@ class DCGAN():
                 axs[i,j].imshow(gen_imgs[cnt, :,:,:])
                 axs[i,j].axis('off')
                 cnt += 1
-        fig.savefig("images/flowers_{:05d}.png".format(epoch))
+        fig.savefig("images/flowers_auxgan_{:05d}.png".format(epoch))
         plt.close()
 
 
 if __name__ == '__main__':
     dcgan = DCGAN()
     history = dcgan.train(epochs=10000, batch_size=32, save_interval=100)
-    with open('flowers_gan.hist','w') as fp:
+    with open('flowers_auxgan.hist','w') as fp:
         json.dump(history, fp)
 
