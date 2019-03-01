@@ -25,7 +25,7 @@ class DCGAN():
         self.img_cols = 64
         self.channels = 3
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
-        self.latent_dim = 16
+        self.latent_dim = 64
 
         optimizer = Adam(0.0002, 0.5)
 
@@ -61,22 +61,32 @@ class DCGAN():
 
         x = Dense(256 * 4 * 4, activation="relu")(noise)
         x = Reshape((4, 4, 256))(x)
+
+        #x = UpSampling2D()(x)
+        #x = Conv2D(256, kernel_size=3, padding="same")(x)
+        #x = BatchNormalization(momentum=0.8)(x)
+        #x = Activation("relu")(x)
+
         x = UpSampling2D()(x)
         x = Conv2D(128, kernel_size=3, padding="same")(x)
         x = BatchNormalization(momentum=0.8)(x)
         x = Activation("relu")(x)
+
         x = UpSampling2D()(x)
         x = Conv2D(64, kernel_size=3, padding="same")(x)
         x = BatchNormalization(momentum=0.8)(x)
         x = Activation("relu")(x)
+
         x = UpSampling2D()(x)
         x = Conv2D(32, kernel_size=3, padding="same")(x)
         x = BatchNormalization(momentum=0.8)(x)
         x = Activation("relu")(x)
+
         x = UpSampling2D()(x)
         x = Conv2D(16, kernel_size=3, padding="same")(x)
         x = BatchNormalization(momentum=0.8)(x)
         x = Activation("relu")(x)
+
         x = Conv2D(self.channels, kernel_size=3, padding="same")(x)
         img = Activation("tanh")(x)
 
@@ -86,22 +96,31 @@ class DCGAN():
 
         img = Input(shape=self.img_shape)
 
-        x = Conv2D(32, kernel_size=3, strides=2, padding="same")(img)
-        x = LeakyReLU(alpha=0.2)(x)
-        x = Dropout(0.25)(x)
-        x = Conv2D(64, kernel_size=3, strides=2, padding="same")(x)
-        x = ZeroPadding2D(padding=((0,1),(0,1)))(x)
+        x = Conv2D(16, kernel_size=3, strides=2, padding="same")(img)
         x = BatchNormalization(momentum=0.8)(x)
         x = LeakyReLU(alpha=0.2)(x)
         x = Dropout(0.25)(x)
+
+        x = Conv2D(32, kernel_size=3, strides=2, padding="same")(x)
+        x = BatchNormalization(momentum=0.8)(x)
+        x = LeakyReLU(alpha=0.2)(x)
+        x = Dropout(0.25)(x)
+
+        x = Conv2D(64, kernel_size=3, strides=2, padding="same")(x)
+        x = BatchNormalization(momentum=0.8)(x)
+        x = LeakyReLU(alpha=0.2)(x)
+        x = Dropout(0.25)(x)
+
         x = Conv2D(128, kernel_size=3, strides=2, padding="same")(x)
         x = BatchNormalization(momentum=0.8)(x)
         x = LeakyReLU(alpha=0.2)(x)
         x = Dropout(0.25)(x)
-        x = Conv2D(256, kernel_size=3, strides=1, padding="same")(x)
-        x = BatchNormalization(momentum=0.8)(x)
-        x = LeakyReLU(alpha=0.2)(x)
-        x = Dropout(0.25)(x)
+
+        #x = Conv2D(256, kernel_size=3, strides=2, padding="same")(x)
+        #x = BatchNormalization(momentum=0.8)(x)
+        #x = LeakyReLU(alpha=0.2)(x)
+        #x = Dropout(0.25)(x)
+
         x = Flatten()(x)
         validity = Dense(1, activation='sigmoid')(x)
 
@@ -116,7 +135,7 @@ class DCGAN():
             zoom_range=0.2)
         real_generator = train_datagen.flow_from_directory(
             train_dir, target_size=(self.img_rows, self.img_cols), 
-            batch_size=batch_size, class_mode='categorical', classes=['dandelion'])
+            batch_size=batch_size, class_mode='categorical', classes=['crocus'])
 
         # Adversarial ground truths
         valid = np.ones((batch_size, 1))
@@ -189,19 +208,20 @@ class DCGAN():
         gen_imgs = 0.5 * gen_imgs + 0.5
 
         fig, axs = plt.subplots(r, c)
+        plt.subplots_adjust(left=0.05, bottom=0.05, right=0.95, top=0.95, wspace=0.05, hspace=0.05)
         cnt = 0
         for i in range(r):
             for j in range(c):
                 axs[i,j].imshow(gen_imgs[cnt, :,:,:])
                 axs[i,j].axis('off')
                 cnt += 1
-        fig.savefig("images/flowers_{:05d}.png".format(epoch))
+        fig.savefig("images/crocus64_{:05d}.png".format(epoch))
         plt.close()
 
 
 if __name__ == '__main__':
     dcgan = DCGAN()
     history = dcgan.train(epochs=10000, batch_size=32, save_interval=100)
-    with open('flowers_gan.hist','w') as fp:
+    with open('crocus64_gan.hist','w') as fp:
         json.dump(history, fp)
 

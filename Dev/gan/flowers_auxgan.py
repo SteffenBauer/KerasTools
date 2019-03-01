@@ -48,7 +48,9 @@ class DCGAN():
         # Trains the generator to fool the discriminator
         optimizer = Adam(0.0002, 0.5)
 
-        self.combined = Model([inp_gen, lbl_gen], [out_discr, lbl_discr])
+        comb_valid, comb_label = self.frozen_discriminator(self.generator([inp_gen, lbl_gen]))
+
+        self.combined = Model(inputs = [inp_gen, lbl_gen], outputs = [comb_valid, comb_label])
         self.combined.compile(loss=losses, optimizer=optimizer)
 
         self.discriminator.summary()
@@ -121,7 +123,7 @@ class DCGAN():
             zoom_range=0.2)
         real_generator = train_datagen.flow_from_directory(
             train_dir, target_size=(self.img_rows, self.img_cols),
-            batch_size=batch_size, class_mode='categorical')
+            batch_size=batch_size, class_mode='sparse')
 
         # History arrays
         loss_discriminator = []
@@ -138,18 +140,18 @@ class DCGAN():
             # ---------------------
 
             imgs, img_labels = next(real_generator)
-    
+
             # Adversarial ground truths
             valid = np.ones((imgs.shape[0], 1))
             fake = np.zeros((imgs.shape[0], 1))
             
             # Sample noise and generate a batch of new images
             noise = np.random.normal(0, 1, (imgs.shape[0], self.latent_dim))
-            sampled_labels = np.random.randint(0, self.num_classes, (batch_size, 1))
+            sampled_labels = np.random.randint(0, self.num_classes, (imgs.shape[0], 1))
             gen_imgs = self.generator.predict([noise, sampled_labels])
 
             # Train the discriminator (real classified as ones and generated as zeros)
-            fake_labels = 10 * np.ones(img_labels.shape)
+            fake_labels = self.num_classes * np.ones(img_labels.shape)
             
             d_loss_real = self.discriminator.train_on_batch(imgs, [valid, img_labels])
             d_loss_fake = self.discriminator.train_on_batch(gen_imgs, [fake, fake_labels])
@@ -163,10 +165,10 @@ class DCGAN():
             g_loss = self.combined.train_on_batch([noise, sampled_labels], [valid, sampled_labels])
 
             # Plot the progress
-            print ("%d [D loss: %f, acc.: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100*d_loss[1], g_loss))
+            print ("%d [D loss: %f, acc.: %.2f%%, op_acc: %.2f%%] [G loss: %f]" % (epoch, d_loss[0], 100*d_loss[3], 100*d_loss[4], g_loss[0]))
             d_losses.append(d_loss[0])
-            d_accs.append(d_loss[1])
-            g_losses.append(g_loss)
+            d_accs.append(d_loss[3])
+            g_losses.append(g_loss[0])
             
             # If at save interval => save generated image samples
             if epoch % save_interval == 0:
@@ -185,10 +187,10 @@ class DCGAN():
                 'g_loss': loss_generator}
 
     def save_imgs(self, epoch):
-        r, c = 3, self.num_classes
+        r, c = 4, 4 #self.num_classes
         #noise = np.random.normal(0, 1, (r * c, self.latent_dim))
-        noise = np.asarray([[i/float(r*c-1)]*self.latent_dim for i in range(r*c)])
-        sampled_labels = np.array([num for _ in range(r) for num in range(c)])
+        noise = np.asarray([[0.5]*self.latent_dim for i in range(r*c)]) # np.asarray([[i/float(r*c-1)]*self.latent_dim for i in range(r*c)])
+        sampled_labels = np.array([ri*4+ci for ri in range(r) for ci in range(c)]) # np.array([num for _ in range(r) for num in range(c)])
         
         gen_imgs = self.generator.predict([noise, sampled_labels])
 
