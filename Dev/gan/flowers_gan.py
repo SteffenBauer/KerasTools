@@ -21,11 +21,11 @@ import glob
 class DCGAN():
     def __init__(self):
         # Input shape
-        self.img_rows = 64
-        self.img_cols = 64
+        self.img_rows = 32
+        self.img_cols = 32
         self.channels = 3
         self.img_shape = (self.img_rows, self.img_cols, self.channels)
-        self.latent_dim = 64
+        self.latent_dim = 256
 
         optimizer = Adam(0.0002, 0.5)
 
@@ -59,8 +59,8 @@ class DCGAN():
 
         noise = Input(shape=(self.latent_dim,))
 
-        x = Dense(256 * 4 * 4, activation="relu")(noise)
-        x = Reshape((4, 4, 256))(x)
+        x = Dense(256 * 2 * 2, activation="relu")(noise)
+        x = Reshape((2, 2, 256))(x)
 
         #x = UpSampling2D()(x)
         #x = Conv2D(256, kernel_size=3, padding="same")(x)
@@ -215,13 +215,13 @@ class DCGAN():
                 axs[i,j].imshow(gen_imgs[cnt, :,:,:])
                 axs[i,j].axis('off')
                 cnt += 1
-        fig.savefig("images/crocus64_{:05d}.png".format(epoch))
+        fig.savefig("images/crocus32_{:05d}.png".format(epoch))
         plt.close()
 
 
 if __name__ == '__main__':
     dcgan = DCGAN()
-    history = dcgan.train(epochs=10000, batch_size=32, save_interval=100)
-    with open('crocus64_gan.hist','w') as fp:
+    history = dcgan.train(epochs=20000, batch_size=32, save_interval=100)
+    with open('crocus32_gan.hist','w') as fp:
         json.dump(history, fp)
 
