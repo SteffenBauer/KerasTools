@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 
 import keras
+import tensorflow as tf
+
 import catch
 import agent
 import memory
+
+tf.logging.set_verbosity(tf.logging.ERROR)
 
 #import cProfile
 #import pstats
@@ -29,7 +33,7 @@ a = agent.Agent(model=model, mem=m, num_frames = nb_frames)
 #pr = cProfile.Profile()
 #pr.enable()
 
-a.train(game, batch_size=256, epochs=10, train_interval=32, episodes=256,
+a.train(game, batch_size=256, epochs=20, train_interval=32, episodes=256,
             epsilon=[0.5, 0.0], epsilon_rate=0.2,
             gamma=0.95, reset_memory=False)
 

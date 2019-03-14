@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 
 import keras
+import tensorflow as tf
+
 import tromis
 import agent
 import memory
 
 #import cProfile
 #import pstats
+
+tf.logging.set_verbosity(tf.logging.ERROR)
 
 width, height, nb_frames = 5, 8, 2
 

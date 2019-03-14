@@ -30,7 +30,8 @@ class Agent(object):
         else:
             delta = None
             final_epsilon = epsilon
-
+        
+        header_printed = False
         for epoch in range(initial_epoch, epochs+1):
             win_count, turn_count, losses, scores = 0, 0, [], []
             if reset_memory: self.memory.reset()
@@ -51,12 +52,15 @@ class Agent(object):
                         result = self.replay(gamma, batch_size, game.nb_actions)
                         if result: losses.append(result)
                         turn_count = 0
-                        update_progress("Epoch {0: 4d}/{1: 4d} | e {2: .2f} | Episode {3: 4d}".format(epoch, epochs, epsilon, episode), float(episode+1)/episodes)
+                        if not header_printed:
+                            print("{:^10s}|{:^9s}|{:^14s}|{:^9s}|{:^9s}|{:^15s}|{:^8s}".format("Epoch","Epsilon","Episode","Loss", "Win", "Avg/Max Score", "Memory"))
+                            header_printed = True
+                        update_progress("{0: 4d}/{1: 4d} |   {2:.2f}  | {3: 4d}".format(epoch, epochs, epsilon, episode), float(episode+1)/episodes)
                     if game_over:
                         scores.append(current_score)
                         if game.is_won(): win_count += 1
                         break
-            print(" | Loss {0: 2.4f} | Win {1:>7.2%} | Avg/Max Score {2: 4.2f}/{3: 4.2f} | Mem {4: 6d}".format(
+            print(" | {0: 2.4f} | {1:>7.2%} | {2: 5.2f} /{3: 5.2f}  | {4: 6d}".format(
                 sum(losses)/len(losses), 
                 float(win_count)/float(episodes), 
                 sum(scores)/float(episodes),
