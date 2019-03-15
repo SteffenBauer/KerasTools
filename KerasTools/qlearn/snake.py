@@ -126,7 +126,7 @@ class Snake(Game):
         return self.self_bite() or self.hit_border()
 
     def timeout(self):
-        return (self.max_turn > 0) and (self.turn >= self.max_turn)
+        return (self.max_turn is not None) and (self.max_turn > 0) and (self.turn >= self.max_turn)
 
     def is_over(self):
         return self.had_bumped() or self.timeout()
