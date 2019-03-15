@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 _mapping = {
            "mnist":
              ['Zero', 'One', 'Two', 'Three', 'Four',
