@@ -19,10 +19,15 @@ class Agent(object):
         else:
             self.memory = mem
         self.num_frames = num_frames
+        self.history = {'gamma': 0, 'epsilon': [], 'memory': [],
+                        'win': [], 'loss': [], 
+                        'avg_scores': [], 'max_scores': []}
 
     def train(self, game, epochs=1, initial_epoch=1, episodes=256,
               batch_size=32, train_interval=32, gamma=0.9, epsilon=[1., .1],
               epsilon_rate=0.5, reset_memory=False, observe=0, callbacks=[]):
+
+        self.history['gamma'] = gamma
 
         if type(epsilon) in {tuple, list}:
             delta =  ((epsilon[0] - epsilon[1]) / (epochs * epsilon_rate))
@@ -66,8 +71,18 @@ class Agent(object):
                 sum(scores)/float(episodes),
                 max(scores),
                 len(self.memory.memory)))
+
+            self.history['epsilon'].append(epsilon)
+            self.history['win'].append(float(win_count)/float(episodes))
+            self.history['loss'].append(sum(losses)/len(losses))
+            self.history['avg_scores'].append(sum(scores)/float(episodes))
+            self.history['max_scores'].append(max(scores))
+            self.history['memory'].append(len(self.memory.memory))
+            
             if epsilon > final_epsilon and delta:
                 epsilon = max(final_epsilon, epsilon - delta)
+
+        return self.history
 
     def act(self, game, state, epsilon=0.0):
         if random.random() <= epsilon:
