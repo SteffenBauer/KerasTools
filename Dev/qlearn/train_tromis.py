@@ -14,9 +14,9 @@ import memory
 
 tf.logging.set_verbosity(tf.logging.ERROR)
 
-width, height, nb_frames = 5, 8, 4
+width, height, nb_frames = 7, 12, 4
 
-game = tromis.Tromis(width=width, height=height, max_turn=64)
+game = tromis.Tromis(width=width, height=height, max_turn=128)
 
 '''
 inpc = keras.layers.Input(shape=(height, width, 3))
@@ -47,7 +47,9 @@ model.summary()
 inp = keras.layers.Input(shape=(nb_frames, height, width, 3))
 #gray = keras.layers.Lambda(lambda t:t[...,0]*0.3 + t[...,1]*0.6 + t[...,2]*0.1)(inp)
 #perm = keras.layers.Permute((2,3,1))(gray)
-conv1 = keras.layers.Conv3D(64, 3, activation='relu', strides=(1,2,2), padding='same')(inp)
+conv1 = keras.layers.Conv3D(128, 3, activation='relu', strides=(1,2,2), padding='same')(inp)
+#conv2 = keras.layers.Conv3D(32, 3, activation='relu', strides=(2,2,2), padding='same')(conv1)
+#conv3 = keras.layers.Conv3D(128, 3, activation='relu', strides=(2,2,2), padding='same')(conv2)
 #conv2 = keras.layers.Conv2D(16, 3, strides=2, activation='relu')(conv1)
 flat = keras.layers.Flatten()(conv1)
 #avg = keras.layers.GlobalAveragePooling2D()(conv)
@@ -64,12 +66,14 @@ a = agent.Agent(model=model, mem=m, num_frames = nb_frames)
 #pr = cProfile.Profile()
 #pr.enable()
 
-history = a.train(game, batch_size=256, epochs=100, train_interval=32, episodes=256,
+history = a.train(game, batch_size=256, epochs=200, train_interval=32, episodes=256,
             epsilon=0.0, # [0.5, 0.0], epsilon_rate=0.1,
             gamma=0.95, reset_memory=False)
 
-with open('tromis_g0975_e100.hist','w') as fp:
+with open('tromis.hist','w') as fp:
     json.dump(history, fp)
+
+model.save('tromis.h5')
 
 #pr.disable()
 #stats = pstats.Stats(pr).sort_stats('cumulative')
