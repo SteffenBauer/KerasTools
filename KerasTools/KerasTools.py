@@ -1,4 +1,3 @@
-from __future__ import print_function
 import sys
 import matplotlib.pyplot as plt
 
@@ -28,7 +27,9 @@ def plot_history(history):
 
     plt.figure(figsize=(15,5))
 
-    plt.subplot(1, 2, 1)
+    if 'acc' in history:
+        plt.subplot(1, 2, 1)
+
     plt.plot(epochs, history['loss'], linewidth=2.0, label='train loss')
     if 'val_loss' in history:
         plt.plot(epochs, history['val_loss'], linewidth=2.0, label='val loss')
@@ -40,16 +41,18 @@ def plot_history(history):
     plt.ylabel('Loss')
     plt.legend()
 
-    plt.subplot(1, 2, 2)
-    plt.plot(epochs, history['acc'], linewidth=2.0, label='train acc')
-    if 'val_acc' in history:
-        plt.plot(epochs, history['val_acc'], linewidth=2.0, label='val acc')
-    if 'test_acc' in history:
-        plt.plot([train_epochs], history['test_acc'], 'rx', ms=10.0, label='test acc')
-        plt.axvline(train_epochs, ls=':', linewidth=2.0)
-    plt.ylabel('Accuracy')
-    plt.xlabel('Epochs')
-    plt.legend()
+    if 'acc' in history:
+        plt.subplot(1, 2, 2)
+        plt.plot(epochs, history['acc'], linewidth=2.0, label='train acc')
+        if 'val_acc' in history:
+            plt.plot(epochs, history['val_acc'], linewidth=2.0, label='val acc')
+        if 'test_acc' in history:
+            plt.plot([train_epochs], history['test_acc'], 'rx', ms=10.0, label='test acc')
+            plt.axvline(train_epochs, ls=':', linewidth=2.0)
+        plt.ylabel('Accuracy')
+        plt.xlabel('Epochs')
+        plt.legend()
+
     plt.show()
 
 

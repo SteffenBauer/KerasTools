@@ -1,2 +1,1 @@
-from . import agent, memory, game, callbacks, catch, snake, tromis, maze
-
+from . import agent, memory, callbacks, game, catch, snake, tromis
