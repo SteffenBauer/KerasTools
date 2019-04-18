@@ -12,7 +12,7 @@ class Catch(Game):
         n = random.randrange(0, self.grid_size-1)
         m = random.randrange(1, self.grid_size-2)
         self.state = [0, n, m]
-        self.penalty = 0
+        self.penalty = 0.0
 
     @property
     def name(self):       return "Catch"
@@ -54,7 +54,7 @@ class Catch(Game):
         elif self.is_over():
             return -1.0
         else:
-            return 0.0 # self.penalty
+            return self.penalty
 
     def is_over(self):
         return self.state[0] == self.grid_size-1

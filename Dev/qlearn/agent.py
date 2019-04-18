@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import memory
 import numpy as np
@@ -42,12 +42,16 @@ class Agent(object):
             if reset_memory: self.memory.reset()
             for episode in range(episodes):
                 game.reset()
+                for c in callbacks: 
+                    c.game_start(game.get_frame())
                 F = np.expand_dims(game.get_frame(), axis=0)
                 S = np.repeat(F, self.num_frames, axis=0)
                 current_score = 0.0
                 while True:
                     action = self.act(game, S, epsilon)
                     Fn, r, game_over = game.play(action)
+                    for c in callbacks: 
+                        c.game_frame(game.get_frame())
                     Sn = np.append(S[1:], np.expand_dims(Fn, axis=0), axis=0)
                     self.memory.remember(S, action, r, Sn, game_over)
                     S = np.copy(Sn)
@@ -64,21 +68,32 @@ class Agent(object):
                     if game_over:
                         scores.append(current_score)
                         if game.is_won(): win_count += 1
+                        for c in callbacks:
+                            c.game_over()
                         break
+                        
+            loss = sum(losses)/len(losses)
+            win_ratio = float(win_count)/float(episodes)
+            avg_score = sum(scores)/float(episodes)
+            max_score = max(scores)
+            memory_fill = len(self.memory.memory)
             print(" | {0: 2.4f} | {1:>7.2%} | {2: 5.2f} /{3: 5.2f}  | {4: 6d}".format(
-                sum(losses)/len(losses), 
-                float(win_count)/float(episodes), 
-                sum(scores)/float(episodes),
-                max(scores),
-                len(self.memory.memory)))
+                loss, win_ratio, avg_score, max_score, memory_fill
+            ))
 
             self.history['epsilon'].append(epsilon)
-            self.history['win'].append(float(win_count)/float(episodes))
-            self.history['loss'].append(sum(losses)/len(losses))
-            self.history['avg_scores'].append(sum(scores)/float(episodes))
-            self.history['max_scores'].append(max(scores))
-            self.history['memory'].append(len(self.memory.memory))
-            
+            self.history['win'].append(win_ratio)
+            self.history['loss'].append(loss)
+            self.history['avg_scores'].append(avg_score)
+            self.history['max_scores'].append(max_score)
+            self.history['memory'].append(memory_fill)
+
+            for c in callbacks: 
+                c.epoch_end(
+                    self.model, game.name, epoch, epsilon, loss, 
+                    win_ratio, avg_score, max_score, memory_fill
+                )
+
             if epsilon > final_epsilon and delta:
                 epsilon = max(final_epsilon, epsilon - delta)
 

@@ -101,7 +101,7 @@ class Tromis(Game):
         if self.lost:
             return -1
         elif self.is_won():
-            return 1
+            return 0
         return self.removed_rows
 
     def get_state(self):

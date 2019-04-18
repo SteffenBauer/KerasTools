@@ -92,10 +92,12 @@ class Snake(Game):
         return canvas
 
     def get_score(self):
-        if self.is_won() or self.scored:
-            score = 1
-        elif self.had_bumped():
+        if self.is_won():
+            score = 0
+        elif self.is_over():
             score = -1
+        elif self.scored:
+            score = 1
         else:
             score = 0
         return score
