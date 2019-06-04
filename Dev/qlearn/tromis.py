@@ -102,7 +102,7 @@ class Tromis(Game):
             return -1
         elif self.is_won():
             return 0
-        return self.removed_rows
+        return 1 if self.removed_rows > 0 else 0
 
     def get_state(self):
         canvas = np.zeros((self.height,self.width,3))

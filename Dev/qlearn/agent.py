@@ -29,6 +29,9 @@ class Agent(object):
 
         self.history['gamma'] = gamma
 
+        if observe > 0:
+            self.fill_memory(game, observe)
+
         if type(epsilon) in {tuple, list}:
             delta =  ((epsilon[0] - epsilon[1]) / (epochs * epsilon_rate))
             epsilon, final_epsilon = epsilon
@@ -119,6 +122,24 @@ class Agent(object):
                 if not game_over_s[i]:
                     targets[i,actions[i]] += gamma*np.max(predicted_next_rewards[i])
             return self.model.train_on_batch(np.asarray(states), targets)
+
+    def fill_memory(self, game, episodes):
+        print("Fill memory for {} episodes".format(episodes))
+        for episode in range(episodes):
+            game.reset()
+            F = np.expand_dims(game.get_frame(), axis=0)
+            S = np.repeat(F, self.num_frames, axis=0)
+            while True:
+                action = random.randrange(game.nb_actions)
+                Fn, r, game_over = game.play(action)
+                Sn = np.append(S[1:], np.expand_dims(Fn, axis=0), axis=0)
+                if r != 0.0:
+                    self.memory.remember(S, action, r, Sn, game_over)
+                if game_over:
+                    break
+            update_progress("{0: 4d}/{1: 4d} | {2: 6d} | ".
+                format(episode+1, episodes, len(self.memory.memory)), float(episode+1)/episodes)
+        print("")
 
 if __name__ == '__main__':
     pass

@@ -16,7 +16,7 @@ class Snake(Game):
     def nb_actions(self): return 3
     @property
     def actions(self):    return {0:'left', 1:'right', 2:'forward'}
-        
+
     def play(self, action):
         if self.is_over() or (action not in range(self.nb_actions)):
             return
@@ -31,9 +31,9 @@ class Snake(Game):
         else:
             self.scored = True
             self.drop_fruit()
-        
+
         return (self.get_frame(), self.get_score(), self.is_over())
-            
+
     def drop_fruit(self):
         if len(self.snake) >= (self.grid_size - 2) ** 2:
             self.fruit = (-1, -1)
