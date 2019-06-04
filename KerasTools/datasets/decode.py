@@ -40,6 +40,8 @@ _mapping = {
               'Tank', 'Telephone', 'Television', 'Tiger', 'Tractor', 
               'Train', 'Trout', 'Tulips', 'Turtle', 'Wardrobe', 
               'Whale', 'Willow', 'Wolf', 'Woman', 'Worm'],
+           "imdb":
+             ['negative', 'positive'],
            "reuters":
              ['cocoa','grain','veg-oil','earn','acq','wheat','copper','housing','money-supply',
               'coffee','sugar','trade','reserves','ship','cotton','carcass','crude','nat-gas',
