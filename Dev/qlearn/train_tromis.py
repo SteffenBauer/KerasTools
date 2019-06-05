@@ -29,6 +29,7 @@ convm.summary()
 inp = keras.layers.Input(shape=(nb_frames, height, width, 3))
 x = keras.layers.TimeDistributed(convm)(inp)
 x = keras.layers.SimpleRNN(32, return_sequences=False)(x)
+x = keras.layers.Dense(32, activation='relu')(x)
 act = keras.layers.Dense(game.nb_actions, activation='linear')(x)
 
 model = keras.models.Model(inputs=inp, outputs=act)

@@ -12,7 +12,7 @@ import memory
 #import cProfile
 #import pstats
 
-grid_size = 12
+grid_size = 20
 nb_frames = 2
 
 game = catch.Catch(grid_size)
@@ -29,13 +29,14 @@ convm.summary()
 inp = keras.layers.Input(shape=(nb_frames, grid_size, grid_size, 3))
 x = keras.layers.TimeDistributed(convm)(inp)
 x = keras.layers.SimpleRNN(32, return_sequences=False)(x)
+x = keras.layers.Dense(32, activation='relu')(x)
 act = keras.layers.Dense(game.nb_actions, activation='linear')(x)
 
 model = keras.models.Model(inputs=inp, outputs=act)
 model.compile(keras.optimizers.rmsprop(), 'logcosh')
 model.summary()
 
-m = memory.UniqMemory(memory_size=65536)
+m = memory.UniqMemory(memory_size=None)
 a = agent.Agent(model=model, mem=m, num_frames = nb_frames)
 
 #pr = cProfile.Profile()

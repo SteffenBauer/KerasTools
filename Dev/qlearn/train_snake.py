@@ -29,21 +29,22 @@ convm.summary()
 inp = keras.layers.Input(shape=(nb_frames, grid_size, grid_size, 3))
 x = keras.layers.TimeDistributed(convm)(inp)
 x = keras.layers.SimpleRNN(32, return_sequences=False)(x)
+x = keras.layers.Dense(32, activation='relu')(x)
 act = keras.layers.Dense(game.nb_actions, activation='linear')(x)
 
 model = keras.models.Model(inputs=inp, outputs=act)
 model.compile(keras.optimizers.rmsprop(), 'logcosh')
 model.summary()
 
-m = memory.UniqMemory(memory_size=65536)
+m = memory.UniqMemory(memory_size=None)
 a = agent.Agent(model=model, mem=m, num_frames = nb_frames)
 
 #pr = cProfile.Profile()
 #pr.enable()
 
-a.train(game, batch_size=64, epochs=50, train_interval=8, episodes=256,
+a.train(game, batch_size=256, epochs=50, train_interval=8, episodes=256,
             epsilon=[0.0, 0.0], epsilon_rate=0.2, 
-            gamma=0.95, reset_memory=False, observe=0)
+            gamma=0.98, reset_memory=False, observe=0)
 
 #pr.disable()
 #stats = pstats.Stats(pr).sort_stats('cumulative')

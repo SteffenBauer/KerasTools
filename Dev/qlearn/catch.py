@@ -32,7 +32,7 @@ class Catch(Game):
         else:
             new_basket = basket
         self.state = [fy+1, fx, new_basket]
-        self.penalty = 0.0 if action == 1 else -0.0
+        self.penalty = 0.0 if action == 1 else 0.0
         return (self.get_frame(), self.get_score(), self.is_over())
 
     def get_state(self):

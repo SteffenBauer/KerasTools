@@ -133,8 +133,7 @@ class Agent(object):
                 action = random.randrange(game.nb_actions)
                 Fn, r, game_over = game.play(action)
                 Sn = np.append(S[1:], np.expand_dims(Fn, axis=0), axis=0)
-                if r != 0.0:
-                    self.memory.remember(S, action, r, Sn, game_over)
+                self.memory.remember(S, action, r, Sn, game_over)
                 if game_over:
                     break
             update_progress("{0: 4d}/{1: 4d} | {2: 6d} | ".

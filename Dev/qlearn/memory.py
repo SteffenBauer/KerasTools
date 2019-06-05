@@ -17,7 +17,7 @@ class BasicMemory(Memory):
         
     def remember(self, S, a, r, Snext, game_over):
         self.memory.append((S,a,r,Snext,game_over))
-        if len(self.memory) > self.memory_size:
+        if self.memory_size is not None and len(self.memory) > self.memory_size:
             self.memory.pop(0)
 
     def get_batch(self, _model, batch_size):
@@ -39,7 +39,7 @@ class UniqMemory(Memory):
         if h not in self.hashes:
             self.memory.append([(S,a,r,Snext,game_over), h])
             self.hashes.add(h)
-        if len(self.memory) > self.memory_size:
+        if self.memory_size is not None and len(self.memory) > self.memory_size:
             self.hashes.remove(self.memory.pop(0)[1])
 
     def get_batch(self, _model, batch_size):
