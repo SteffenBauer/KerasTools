@@ -1,0 +1,146 @@
+Reuters Newswire Categories
+
+                     nr of documents   mean number of
+  class name         train   test    words in train set
+
+0 cocoa
+1 grain
+2 veg-oil
+3 earn
+4 acq
+5 wheat
+6 copper
+7 housing
+8 money-supply
+9 coffee
+10 sugar
+11 trade
+12 reserves
+13 ship
+14 cotton
+15 carcass
+16 crude
+17 nat-gas
+18 cpi
+19 money-fx
+20 interest
+21 gnp
+22 meal-feed
+23 alum
+24 oilseed
+25 gold
+26 tin
+27 strategic-metal
+28 livestock
+29 retail
+30 ipi
+31 iron-steel 
+32 rubber
+33 heat
+34 jobs
+35 lei
+36 bop
+37 zinc
+38 orange
+39 pet-chem?
+40 dlr
+41 gas / pet-chem?
+42 silver
+43 wpi
+44 hog
+45 lead
+
+
+
+                         nr of documents   mean number of
+        class name            train   test    words in train set
+     1: earn                : 2877    1087    104.4
+     2: acq                 : 1650     719    150.1
+     3: money-fx            :  538     179    219.0
+     4: grain               :  433     149    223.6
+     5: crude               :  389     189    247.3
+     6: trade               :  368     117    294.3
+     7: interest            :  347     131    198.0
+     8: wheat               :  212      71    225.6
+     9: ship                :  197      89    203.7
+    10: corn                :  181      56    259.1
+    11: money-supply        :  140      34    170.5
+    12: dlr                 :  131      44    230.4
+    13: sugar               :  126      36    247.2
+    14: oilseed             :  124      47    277.9
+    15: coffee              :  111      28    264.1
+    16: gnp                 :  101      35    372.8
+    17: gold                :   94      30    188.5
+    18: veg-oil             :   87      37    291.0
+    19: soybean             :   78      33    347.9
+    20: livestock           :   75      24    222.9
+    21: nat-gas             :   75      30    257.7
+    22: bop                 :   75      30    288.1
+    23: cpi                 :   69      28    235.4
+    24: cocoa               :   55      18    266.4
+    25: reserves            :   55      18    216.1
+    26: carcass             :   50      18    259.7
+    27: copper              :   47      18    201.6
+    28: jobs                :   46      21    232.7
+    29: yen                 :   45      14    282.8
+    30: ipi                 :   41      12    232.1
+    31: iron-steel          :   40      14    220.5
+    32: cotton              :   39      20    366.3
+    33: barley              :   37      14    272.9
+    34: gas                 :   37      17    209.4
+    35: rubber              :   37      12    274.5
+    36: alum                :   35      23    180.5
+    37: rice                :   35      24    359.8
+    38: palm-oil            :   30      10    234.5
+    39: meal-feed           :   30      19    387.1
+    40: sorghum             :   24      10    511.3
+    41: retail              :   23       2    324.8
+    42: zinc                :   21      13    189.9
+    43: silver              :   21       8    221.0
+    44: pet-chem            :   20      12    204.9
+    45: wpi                 :   19      10    200.9
+    46: tin                 :   18      12    322.1
+    47: rapeseed            :   18       9    168.6
+    48: orange              :   16      11    169.6
+    49: strategic-metal     :   16      11    205.6
+    50: housing             :   16       4    207.2
+    51: hog                 :   16       6    162.3
+    52: lead                :   15      14    216.7
+    53: soy-oil             :   14      11    568.7
+    54: heat                :   14       5    190.4
+    55: fuel                :   13      10    194.6
+    56: soy-meal            :   13      13    551.0
+    57: lei                 :   12       3    134.7
+    58: sunseed             :   11       5    425.1
+    59: dmk                 :   10       4    212.1
+    60: lumber              :   10       6    242.1
+    61: tea                 :    9       4    365.1
+    62: income              :    9       7    286.4
+    63: nickel              :    8       1    193.6
+    64: oat                 :    8       6    648.4
+    65: l-cattle            :    6       2    298.0
+    66: instal-debt         :    5       1    134.3
+    67: platinum            :    5       7    174.8
+    68: groundnut           :    5       4    258.0
+    69: rape-oil            :    5       3    167.2
+    70: sun-oil             :    5       2    201.9
+    71: coconut-oil         :    4       3    471.4
+    72: jet                 :    4       1    109.6
+    73: coconut             :    4       2    264.5
+    74: propane             :    3       3    352.0
+    75: potato              :    3       3    161.2
+    76: cpu                 :    3       1    133.2
+    77: rand                :    2       1    345.7
+    78: palmkernel          :    2       1    326.3
+    79: copra-cake          :    2       1    495.0
+    80: dfl                 :    2       1    764.7
+    81: naphtha             :    2       4    206.7
+    82: palladium           :    2       1    93.0
+    83: nzdlr               :    2       2    508.8
+    84: groundnut-oil       :    1       1    277.5
+    85: castor-oil          :    1       1    194.0
+    86: sun-meal            :    1       1    153.0
+    87: lin-oil             :    1       1    262.5
+    88: cotton-oil          :    1       2    1262.7
+    89: rye                 :    1       1    383.0
+    90: nkr                 :    1       2    122.3
