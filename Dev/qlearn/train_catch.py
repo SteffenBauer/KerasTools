@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import keras
 import tensorflow as tf
@@ -12,8 +12,8 @@ import memory
 #import cProfile
 #import pstats
 
-grid_size = 20
-nb_frames = 2
+grid_size = 12
+nb_frames = 1
 
 game = catch.Catch(grid_size)
 
@@ -36,15 +36,15 @@ model = keras.models.Model(inputs=inp, outputs=act)
 model.compile(keras.optimizers.rmsprop(), 'logcosh')
 model.summary()
 
-m = memory.UniqMemory(memory_size=1024)
+m = memory.UniqMemory(memory_size=65536)
 a = agent.Agent(model=model, mem=m, num_frames = nb_frames)
 
 #pr = cProfile.Profile()
 #pr.enable()
 
-a.train(game, batch_size=64, epochs=100, train_interval=8, episodes=256,
-            epsilon=[0.0, 0.0], epsilon_rate=0.2,
-            gamma=0.95, reset_memory=False, observe=0)
+a.train(game, batch_size=32, epochs=20, train_interval=32, episodes=256,
+            epsilon=[1.0, 0.0], epsilon_rate=0.25,
+            gamma=0.95, reset_memory=False, observe=0, verbose=2)
 
 #pr.disable()
 #stats = pstats.Stats(pr).sort_stats('cumulative')
