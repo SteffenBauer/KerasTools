@@ -54,7 +54,7 @@ class Catch(Game):
         elif self.is_over():
             return -1.0
         else:
-            return self.penalty
+            return 0.0 # self.penalty
 
     def is_over(self):
         return self.state[0] == self.grid_size-1
