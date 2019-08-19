@@ -2,7 +2,7 @@ MIT License
 
 Copyright (c) 2018 Steffen Bauer
 
-This library uses code by other authors that is also distributed under the MIT license:
+This collection uses code by other authors that is also distributed under the MIT license:
 
 All contributions by François Chollet:
 Copyright (c) 2015 - 2018, François Chollet.
@@ -22,6 +22,9 @@ All rights reserved.
 
 All contributions by Fariz Rahman:
 Copyright (c) 2018 Fariz Rahman
+
+All contributions by Deep Reinforcement Learning in Action:
+Copyright (c) 2018 DeepReinforcementLearning
 
 Each contributor holds copyright over their respective contributions.
 
