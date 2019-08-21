@@ -15,7 +15,7 @@ model = torch.nn.Sequential(
     torch.nn.Linear(l1, l2),
     torch.nn.LeakyReLU(),
     torch.nn.Linear(l2, l3),
-    torch.nn.Softmax()
+    torch.nn.Softmax(dim=0)
 )
 
 learning_rate = 0.0009
@@ -27,17 +27,18 @@ def loss_fn(preds, r):
     return -torch.sum(r * torch.log(preds)) # element-wise multipliy, then sum
     
 MAX_DUR = 20
-MAX_EPISODES = 5000
+MAX_EPISODES = 20000
 gamma_ = 0.95
 time_steps = []
 
 env = catch.Catch(grid_size=10)
 
-winnings = []
+win_stats = []
+loss_stats = []
 
 for episode in range(MAX_EPISODES):
     env.reset()
-    curr_state = env.get_state()
+    curr_state = env.get_state().flatten()
     done = False
     transitions = [] # list of state, action, rewards
     
@@ -46,12 +47,10 @@ for episode in range(MAX_EPISODES):
         action = np.random.choice(np.array([0,1,2]), p=act_prob.data.numpy())
         prev_state = curr_state
         curr_state, reward, done = env.play(action)
+        curr_state = curr_state.flatten()
         transitions.append((prev_state, action, reward))
         if done:
-            winnings.append(1 if reward == 1.0 else 0)
-            if len(winnings) >= 10:
-                print(sum(winnings)/10.0)
-                winnings = []
+            win_stats.append(1 if reward == 1.0 else 0)
             break
 
     # Optimize policy network with full episode
@@ -74,4 +73,9 @@ for episode in range(MAX_EPISODES):
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
+    loss_stats.append(loss.item())
+    if len(win_stats) >= 100:
+        print("Episode {: 4d} Win perc {:2.4f} Loss {:2.6f}".format(episode, sum(win_stats)/100.0, sum(loss_stats)/100.0))
+        win_stats = []
+        loss_stats = []
 
