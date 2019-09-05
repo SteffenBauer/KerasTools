@@ -20,7 +20,7 @@ def generate_model():
     actions = keras.layers.Dense(l3, activation='softmax')(x)
     
     def loss_fn(y_true, y_pred): 
-        return keras.backend.sum(y_true * keras.backend.log(y_pred))
+        return -1.0 * keras.backend.sum(y_true * keras.backend.log(keras.backend.max(y_pred)))
 
     model = keras.models.Model(inputs=input_state, outputs=actions)
     model.compile(loss=loss_fn, optimizer=keras.optimizers.Adam(learning_rate))
@@ -59,16 +59,16 @@ for episode in range(MAX_EPISODES):
 
     # Optimize policy network with full episode
     ep_len = len(transitions) # episode length
-    discounted_rewards = np.zeros((ep_len, l3))
+    discounted_rewards = np.zeros((ep_len))
     train_states = []
     for i in range(ep_len): #for each step in episode
         discount = 1.0
-        future_reward = 1e-8
+        future_reward = 0.0
         # discount rewards
         for i2 in range(i, ep_len):
             future_reward += transitions[i2][2] * discount
             discount = discount * gamma_
-        discounted_rewards[i,:] = [future_reward]*l3
+        discounted_rewards[i] = future_reward
         train_states.append(transitions[i][0])
     train_states = np.asarray(train_states)
     # Backpropagate model with preds & discounted_rewards here
