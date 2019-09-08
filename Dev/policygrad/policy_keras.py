@@ -11,19 +11,19 @@ grid_size = 10
 l1 = grid_size*grid_size*3
 l2 = 150
 l3 = 3
-learning_rate = 0.0009
+learning_rate = 0.001
 
 def generate_model():
     input_state = keras.layers.Input(shape=(l1,), name="Input_State")
     x = keras.layers.Dense(l2)(input_state)
     x = keras.layers.LeakyReLU()(x)
     actions = keras.layers.Dense(l3, activation='softmax')(x)
-    
-    def loss_fn(y_true, y_pred): 
-        return -1.0 * keras.backend.sum(y_true * keras.backend.log(keras.backend.max(y_pred)))
+
+    def loss_fn(y_true, y_pred):
+        return -1.0 * keras.backend.sum(y_true * keras.backend.log(y_pred))
 
     model = keras.models.Model(inputs=input_state, outputs=actions)
-    model.compile(loss=loss_fn, optimizer=keras.optimizers.Adam(learning_rate))
+    model.compile(loss=loss_fn, optimizer=keras.optimizers.RMSprop(learning_rate))
 
     return model
 
@@ -59,7 +59,7 @@ for episode in range(MAX_EPISODES):
 
     # Optimize policy network with full episode
     ep_len = len(transitions) # episode length
-    discounted_rewards = np.zeros((ep_len))
+    discounted_rewards = np.zeros((ep_len, l3))
     train_states = []
     for i in range(ep_len): #for each step in episode
         discount = 1.0
@@ -68,7 +68,7 @@ for episode in range(MAX_EPISODES):
         for i2 in range(i, ep_len):
             future_reward += transitions[i2][2] * discount
             discount = discount * gamma_
-        discounted_rewards[i] = future_reward
+        discounted_rewards[i][transitions[i][1]] = future_reward
         train_states.append(transitions[i][0])
     train_states = np.asarray(train_states)
     # Backpropagate model with preds & discounted_rewards here
