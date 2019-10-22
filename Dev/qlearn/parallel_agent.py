@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import memory
 import numpy as np
@@ -13,17 +13,79 @@ def update_progress(msg, progress):
     sys.stdout.flush()
 
 class Agent(object):
-    def __init__(self, model, mem=None, memory_size=1000, num_frames=None):
+    """
+    DQN agent
+
+    # Arguments
+      model: Keras network. Its shape must be compatible with the game.
+        - input_shape: 5D tensor with shape (batch, nb_frames, height, width, channels)
+        - output_shape: 2D tensor with shape (batch, nb_actions)
+      mem: Replay memory object (instance of qlearn.memory.Memory).
+        Defaults to `BasicMemory` if not specified.
+      memory_size: Size of replay memory. Default to 1000.
+      num_frames: Integer. Number of past game state frames to show to the network.
+        Defaults to 1.
+    """
+
+    def __init__(self, model, mem=None, memory_size=1000, num_frames=1):
         self.model = model
         if mem == None:
             self.memory = memory.BasicMemory(memory_size = memory_size)
         else:
             self.memory = mem
         self.num_frames = num_frames
+        self.history = {'gamma': 0, 'epsilon': [], 'memory_fill': [],
+                        'win_ratio': [], 'loss': [],
+                        'avg_score': [], 'max_score': []}
 
     def train(self, game, epochs=1, initial_epoch=1, episodes=256,
               batch_size=32, train_interval=32, gamma=0.9, epsilon=[1., .1],
-              epsilon_rate=0.5, reset_memory=False, observe=0, callbacks=[]):
+              epsilon_rate=0.5, reset_memory=False, observe=0,
+              verbose=1, callbacks=[]):
+
+        """
+        Train the DQN agent on a game
+
+        # Arguments
+          game: Game object (instance of a qlearn.game.Game subclass)
+          epochs: Integer. Number of epochs to train the model.
+            When unspecified, the network is trained over one epoch.
+          initial_epoch: Integer. Value to start epoch counting.
+            If unspecified, `initial_epoch` will default to 1.
+            This argument is useful when continuing network training.
+          episodes: Integer. Number of game episodes to play during one epoch.
+          batch_size: Integer. Number of samples per gradient update.
+            If unspecified, `batch_size` will default to 32.
+          train_interval: Integer. Do one batch of gradient update
+            after that number of game turns were played.
+          gamma: Float between 0.0 and < 1.0. Discount factor.
+          epsilon: Exploration factor. It can be:
+            - Float between 0.0 and 1.0, to set a fixed factor for all epochs.
+            - List or tuple with 2 floats, to set a starting and a final value.
+          epsilon_rate: Float between 0.0 and 1.0. Decay factor for epsilon.
+            Epsilon will reach the final value when this percentage of epochs is reached.
+          reset_memory: Boolean. Sets if the replay memory should be reset before each epoch.
+            Default to `False`.
+          observe: Integer. When specified, fill the replay memory with random game moves for this number of epochs.
+          verbose: Integer. 0, 1, or 2. Verbosity mode.
+            0 = silent, 1 = progress bar, 2 = one line per epoch.
+          callbacks: List of callback objects (instance of qlearn.callbacks.Callback)
+
+        # Returns
+          A History dictionary, containing records of training parameters during successive epochs:
+            - epsilon:      Epsilon value
+            - loss:         Training loss
+            - avg_score:    Average game score
+            - max_score:    Maximum reached game score
+            - win_ratio:    Percentage of won games
+            - memory_fill:  Records in the replay memory
+
+        """
+
+        self.history['gamma'] = gamma
+
+        if observe > 0:
+            self._fill_memory(game, observe)
 
         if type(epsilon) in {tuple, list}:
             delta =  ((epsilon[0] - epsilon[1]) / (epochs * epsilon_rate))
@@ -32,55 +94,43 @@ class Agent(object):
             delta = None
             final_epsilon = epsilon
 
-        games = [copy.copy(game) for i in range(train_interval)]
+        games = [copy.copy(game) for _ in range(train_interval)]
 
+        header_printed = False
         for epoch in range(initial_epoch, epochs+1):
-            episode_count, win_count, turn_count, losses, scores = 0, 0, 0, [], []
+            win_count, turn_count, losses, scores = 0, 0, [], []
             if reset_memory: self.memory.reset()
             for g in games: g.reset()
-            game_frames = [np.expand_dims(g.get_frame(), axis=0) for g in games]
-            game_states = [np.repeat(f, self.num_frames, axis=0) for f in game_frames]
-            game_scores = [0.0 for g in games]
 
-            while episode_count < episodes:
-                actions = self.act(game.nb_actions, game_states, epsilon)
+        # TODO Convert sequential agent training to parallel
 
-                Fn, r, game_over = game.play(action)
-                Sn = np.append(S[1:], np.expand_dims(Fn, axis=0), axis=0)
-                self.memory.remember(S, action, r, Sn, game_over)
-                S = np.copy(Sn)
-                turn_count += 1
-                current_score += r
-                if (turn_count >= train_interval) or (episode == episodes-1 and game_over):
-                    result = self.replay(gamma, batch_size, game.nb_actions)
-                    if result: losses.append(result)
-                    turn_count = 0
-                    update_progress("Epoch {0: 4d}/{1: 4d} | e {2: .2f} | Episode {3: 4d}".format(epoch, epochs, epsilon, episode), float(episode+1)/episodes)
-                if game_over:
-                    scores.append(current_score)
-                    if game.is_won(): win_count += 1
-                    break
-            print(" | Loss {0: 2.4f} | Win {1:>7.2%} | Avg/Max Score {2: 4.2f}/{3: 4.2f} | Mem {4: 6d}".format(
-                sum(losses)/len(losses), 
-                float(win_count)/float(episodes), 
-                sum(scores)/float(episodes),
-                max(scores),
-                len(self.memory.memory)))
-            if epsilon > final_epsilon and delta:
-                epsilon = max(final_epsilon, epsilon - delta)
+    def act(self, games, states, epsilon=0.0):
+        """
+        Choose actions on given game states.
 
-    def act(self, nb_actions, states, epsilon=0.0):
-        predict_list = [random.random() <= epsilon for s in states]
-        predict_states = np.select(predict_list, states)
-        predicted_actions = self.model.predict(predict_states)
+        # Arguments
+          games: List of game objects (instances of a qlearn.game.Game subclass)
+          states: List of game states as numpy arrays of shape (nb_frames, height, width, channels)
+          epsilon: Float between 0.0 and 1.0. Epsilon factor.
+                   Probability that the agent chooses a random action instead of using the DQN.
+
+        # Returns
+          List of chosen game actions. Integer between 0 and `game.nb_actions`.
+
+        """
+        nb_games = len(games)
+        nb_calc = len([i for i in range(nb_games) if random.random() > epsilon])
+        to_calc = sorted(random.sample(nb_games, nb_calc))
         
-    
-        if random.random() <= epsilon:
-            return random.randrange(nb_actions)
-        act_values = self.model.predict(np.expand_dims(np.asarray(state), axis=0))
-        return int(np.argmax(act_values[0]))
+        calc_states = [states[i] for i in to_calc]
+        act_values = self.model.predict(calc_states)
 
-    def replay(self, gamma, batch_size, nb_actions):
+        actions = [random.randrange(nb_actions) for _ in range(nb_games]
+        for i, v in zip(to_calc, act_values):
+            actions[i] = np.argmax(v)
+        return actions
+
+    def _replay(self, gamma, batch_size, nb_actions):
         batch = self.memory.get_batch(self.model, batch_size)
         if batch:
             states, actions, rewards, next_states, game_over_s = zip(*batch)
@@ -94,6 +144,23 @@ class Agent(object):
                 if not game_over_s[i]:
                     targets[i,actions[i]] += gamma*np.max(predicted_next_rewards[i])
             return self.model.train_on_batch(np.asarray(states), targets)
+
+    def _fill_memory(self, game, episodes):
+        print("Fill memory for {} episodes".format(episodes))
+        for episode in range(episodes):
+            game.reset()
+            F = np.expand_dims(game.get_frame(), axis=0)
+            S = np.repeat(F, self.num_frames, axis=0)
+            while True:
+                action = random.randrange(game.nb_actions)
+                Fn, r, game_over = game.play(action)
+                Sn = np.append(S[1:], np.expand_dims(Fn, axis=0), axis=0)
+                self.memory.remember(S, action, r, Sn, game_over)
+                if game_over:
+                    break
+            update_progress("{0: 4d}/{1: 4d} | {2: 6d} | ".
+                format(episode+1, episodes, len(self.memory.memory)), float(episode+1)/episodes)
+        print("")
 
 if __name__ == '__main__':
     pass
