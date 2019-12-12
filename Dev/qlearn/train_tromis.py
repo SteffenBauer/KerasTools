@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import keras
 import tensorflow as tf
@@ -42,7 +42,7 @@ a = agent.Agent(model=model, mem=m, num_frames = nb_frames)
 #pr = cProfile.Profile()
 #pr.enable()
 
-a.train(game, batch_size=64, epochs=50, train_interval=8, episodes=256,
+a.train(game, batch_size=64, epochs=100, train_interval=8, episodes=256,
             epsilon=0.0, # [0.5, 0.0], epsilon_rate=0.1,
             gamma=0.95, reset_memory=False, observe=0)
 
