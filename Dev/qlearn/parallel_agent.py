@@ -94,13 +94,33 @@ class Agent(object):
             delta = None
             final_epsilon = epsilon
 
-        games = [copy.copy(game) for _ in range(train_interval)]
+        games = [copy.copy(game) for _ in range(batch_size)]
 
         header_printed = False
         for epoch in range(initial_epoch, epochs+1):
             win_count, turn_count, losses, scores = 0, 0, [], []
             if reset_memory: self.memory.reset()
             for g in games: g.reset()
+            current_episodes = 0
+            current_scores = [0 for _ in games]
+            F = [np.expand_dims(g.get_frame(), axis=0) for g in games]
+            S = [np.repeat(f, self.num_frames, axis=0) for f in F] # Current game states
+
+            while current_episodes < episodes:
+
+                for i in range(batch_size):
+                    if games[i].is_over():
+                        games[i].reset()
+                        F[i] = np.expand_dims(games[i].get_frame(), axis=0)
+                        S[i] = np.repeat(F[i], self.num_frames, axis=0)
+                        current_scores[i] = 0
+
+                actions = self.act(games, S, epsilon)
+                results = [g.play(a) for g,a in zip(games, actions)]
+                
+                Sn = [np.append(s[1:], np.expand_dims(Fn, axis=0), axis=0) for s in S]
+                
+        
 
         # TODO Convert sequential agent training to parallel
 
@@ -125,7 +145,7 @@ class Agent(object):
         calc_states = [states[i] for i in to_calc]
         act_values = self.model.predict(calc_states)
 
-        actions = [random.randrange(nb_actions) for _ in range(nb_games]
+        actions = [random.randrange(nb_actions) for _ in range(nb_games)]
         for i, v in zip(to_calc, act_values):
             actions[i] = np.argmax(v)
         return actions
