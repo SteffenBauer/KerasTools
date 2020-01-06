@@ -27,7 +27,7 @@ weights = {k: float(len(train_labels)) / float((len(mapping)) * mapping[k]) for 
 
 def build_dnn():
     inp = keras.layers.Input(shape=(maxlen, ))
-    emb = keras.layers.Embedding(max_features, 16, mask_zero=False)(inp)
+    emb = keras.layers.Embedding(max_features, 4, mask_zero=False)(inp)
     flt = keras.layers.Flatten()(emb)
     dns = keras.layers.Dense(64, activation='relu')(flt)
     out = keras.layers.Dense(46, activation='softmax')(dns)
@@ -40,7 +40,7 @@ def build_dnn():
 
 def build_rnn():
     inp = keras.layers.Input(shape=(maxlen, ))
-    emb = keras.layers.Embedding(max_features, 16, mask_zero=True)(inp)
+    emb = keras.layers.Embedding(max_features, 4, mask_zero=True)(inp)
     rnn = keras.layers.GRU(64)(emb)
     out = keras.layers.Dense(46, activation='softmax')(rnn)
     
@@ -50,8 +50,28 @@ def build_rnn():
                   metrics=['accuracy'])
     return model
 
+def build_attn():
+
+    inp = keras.layers.Input(shape=(4,))
+    att = keras.layers.Dense(4, activation='softmax')(inp)
+    atp = keras.layers.multiply([inp, att])
+    atp = keras.layers.Dense(64)(atp)
+    atp = keras.layers.Activation('relu')(atp)
+    attention = keras.models.Model(inputs=inp, outputs=atp)
+
+    inp = keras.layers.Input(shape=(maxlen, ))
+    emb = keras.layers.Embedding(max_features, 4, mask_zero=False)(inp)
+    att = keras.layers.TimeDistributed(attention)(emb)
+    flt = keras.layers.Flatten()(att)
+    out = keras.layers.Dense(46, activation='softmax')(flt)
+    model = keras.models.Model(inputs=inp, outputs=out)
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=keras.optimizers.RMSprop(),
+                  metrics=['accuracy'])
+    return model
+
 print('Build model...')
-model = build_rnn()
+model = build_attn()
 model.summary()
 
 print('Train...')
@@ -59,8 +79,8 @@ history = model.fit(x_train, y_train, class_weight = None,
           batch_size=256, epochs=25, validation_split=0.1)
 
 print('Build and train final model...')
-model = build_rnn()
-final_epochs = 8
+model = build_attn()
+final_epochs = int(np.argmin(history.history['val_loss'])+1)
 model.fit(x_train, y_train, batch_size=256, epochs=final_epochs, class_weight = None)
 test_loss, test_acc = model.evaluate(x_test, y_test)
 print("Test loss", test_loss)
