@@ -3,10 +3,14 @@
 import time
 import os
 
-import keras
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
+#os.environ['CUDA_VISIBLE_DEVICES'] = ''
+
+import tensorflow
+tensorflow.get_logger().setLevel('ERROR')
+import tensorflow.keras as keras
 import numpy as np
 
-#os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
 # Prepare training & test data
 (train_images, train_labels), (test_images, test_labels) = keras.datasets.mnist.load_data()
