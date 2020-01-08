@@ -33,30 +33,32 @@ def network_basic():
     x = keras.layers.Dense(500, activation='relu')(x)
     out = keras.layers.Dense(10, activation='softmax', name='predictions')(x)
     network = keras.models.Model(inputs=inp, outputs=out)
+    network.compile(optimizer=keras.optimizers.SGD(lr=0.01, momentum=0.9),
+                    loss='categorical_crossentropy',
+                    metrics=['accuracy'])
     return network
 
 start_time = time.time()
 network = network_basic()
+network.summary()
 end_time = time.time()
 print("Build time", end_time - start_time)
 
-start_time = time.time()
-network.compile(optimizer=keras.optimizers.SGD(lr=0.01, momentum=0.9), 
-                loss='categorical_crossentropy', 
-                metrics=['accuracy'])
-end_time = time.time()
-print("Compilation time", end_time - start_time)
-
-network.summary()
-
 # Train and test the network
 start_time = time.time()
-history = network.fit(train_images, train_labels, epochs=10, batch_size=64)
+history = network.fit(train_images, train_labels, epochs=20, batch_size=64, validation_split=0.1)
 end_time = time.time()
-print("Training time", end_time - start_time)
+print("Training time first pass", end_time - start_time)
+
+final_epochs = int(np.argmin(history.history['val_loss'])+1)
+network = network_basic()
+start_time = time.time()
+network.fit(train_images, train_labels, epochs=final_epochs, batch_size=64)
+end_time = time.time()
+print("Training time second pass", end_time - start_time)
 
 start_time = time.time()
-test_loss, test_acc = network.evaluate(test_images, test_labels)
+test_loss, test_acc = network.evaluate(test_images, test_labels, verbose=0)
 end_time = time.time()
 print()
 print("Test loss", test_loss)
