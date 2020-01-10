@@ -58,7 +58,7 @@ end_time = time.time()
 print("Training time second pass", end_time - start_time)
 
 start_time = time.time()
-test_loss, test_acc = network.evaluate(test_images, test_labels, verbose=0)
+test_loss, test_acc = network.evaluate(test_images, test_labels)
 end_time = time.time()
 print()
 print("Test loss", test_loss)
