@@ -94,21 +94,19 @@ class Agent(object):
             delta = None
             final_epsilon = epsilon
 
-        games = [copy.copy(game) for _ in range(batch_size)]
+        games = [copy.copy(game) for _ in range(train_interval)]
+        for g in games: g.reset()
+        current_scores = [0 for _ in games]
+        F = [np.expand_dims(g.get_frame(), axis=0) for g in games] # Current game frames
+        S = [np.repeat(f, self.num_frames, axis=0) for f in F] # Current game states
 
         header_printed = False
         for epoch in range(initial_epoch, epochs+1):
-            win_count, turn_count, losses, scores = 0, 0, [], []
+            win_count, losses, scores = 0, [], []
             if reset_memory: self.memory.reset()
-            for g in games: g.reset()
             current_episodes = 0
-            current_scores = [0 for _ in games]
-            F = [np.expand_dims(g.get_frame(), axis=0) for g in games]
-            S = [np.repeat(f, self.num_frames, axis=0) for f in F] # Current game states
-
             while current_episodes < episodes:
-
-                for i in range(batch_size):
+                for i in range(train_interval):
                     if games[i].is_over():
                         games[i].reset()
                         F[i] = np.expand_dims(games[i].get_frame(), axis=0)
@@ -116,13 +114,50 @@ class Agent(object):
                         current_scores[i] = 0
 
                 actions = self.act(games, S, epsilon)
-                results = [g.play(a) for g,a in zip(games, actions)]
-                
-                Sn = [np.append(s[1:], np.expand_dims(Fn, axis=0), axis=0) for s in S]
-                
-        
+                results = [g.play(a) for g,a in zip(games, actions)] # Fn, r, game_over
 
-        # TODO Convert sequential agent training to parallel
+                Sn = []
+                for i in range(train_interval):
+                    fn, r, game_over = results[i]
+                    sn = np.append(S[i][1:], np.expand_dims(fn, axis=0), axis=0)
+                    self.memory.remember(S[i], actions[i], r, sn, game_over)
+                    Sn.append(sn)
+                    current_scores[i] += r
+                    if game_over:
+                        scores.append(current_scores[i])
+                        if games[i].is_won(): win_count += 1
+                        current_episodes += 1
+                S = Sn
+                result = self._replay(gamma, batch_size, game.nb_actions)
+                if result: losses.append(result)
+                if not header_printed and verbose > 0:
+                    print("{:^10s}|{:^9s}|{:^14s}|{:^9s}|{:^9s}|{:^15s}|{:^8s}".format(
+                        "Epoch","Epsilon","Episode","Loss", "Win", "Avg/Max Score", "Memory"))
+                    header_printed = True
+                if verbose == 1:
+                    update_progress("{0: 4d}/{1: 4d} |   {2:.2f}  | {3: 4d}".format(epoch, epochs, epsilon, current_episodes), float(current_episodes+1)/episodes)
+
+            loss = sum(losses)/len(losses)
+            win_ratio = float(win_count)/float(current_episodes)
+            avg_score = sum(scores)/float(current_episodes)
+            max_score = max(scores)
+            memory_fill = len(self.memory.memory)
+            if verbose == 2:
+                print("{0: 4d}/{1: 4d} |   {2:.2f}  |    {3: 4d}    ".format(epoch, epochs, epsilon, current_episodes), end=' ')
+            if verbose > 0:
+                print(" | {0: 2.4f} | {1:>7.2%} | {2: 5.2f} /{3: 5.2f}  | {4: 6d}".format(
+                    loss, win_ratio, avg_score, max_score, memory_fill))
+
+            self.history['epsilon'].append(epsilon)
+            self.history['loss'].append(loss)
+            self.history['win_ratio'].append(win_ratio)
+            self.history['avg_score'].append(avg_score)
+            self.history['max_score'].append(max_score)
+            self.history['memory_fill'].append(memory_fill)
+            if epsilon > final_epsilon and delta:
+                epsilon = max(final_epsilon, epsilon - delta)
+
+        return self.history
 
     def act(self, games, states, epsilon=0.0):
         """
@@ -139,15 +174,17 @@ class Agent(object):
 
         """
         nb_games = len(games)
-        nb_calc = len([i for i in range(nb_games) if random.random() > epsilon])
-        to_calc = sorted(random.sample(nb_games, nb_calc))
-        
-        calc_states = [states[i] for i in to_calc]
-        act_values = self.model.predict(calc_states)
-
+        nb_actions = games[0].nb_actions
         actions = [random.randrange(nb_actions) for _ in range(nb_games)]
-        for i, v in zip(to_calc, act_values):
-            actions[i] = np.argmax(v)
+        nb_calc = len([i for i in range(nb_games) if random.random() > epsilon])
+        if nb_calc > 0:
+            to_calc = sorted(random.sample(range(nb_games), nb_calc))
+            calc_states = [states[i] for i in to_calc]
+            act_values = self.model.predict(np.asarray(calc_states))
+
+            for i, v in zip(to_calc, act_values):
+                actions[i] = np.argmax(v)
+
         return actions
 
     def _replay(self, gamma, batch_size, nb_actions):
@@ -165,21 +202,22 @@ class Agent(object):
                     targets[i,actions[i]] += gamma*np.max(predicted_next_rewards[i])
             return self.model.train_on_batch(np.asarray(states), targets)
 
-    def _fill_memory(self, game, episodes):
-        print("Fill memory for {} episodes".format(episodes))
-        for episode in range(episodes):
-            game.reset()
-            F = np.expand_dims(game.get_frame(), axis=0)
-            S = np.repeat(F, self.num_frames, axis=0)
-            while True:
-                action = random.randrange(game.nb_actions)
-                Fn, r, game_over = game.play(action)
-                Sn = np.append(S[1:], np.expand_dims(Fn, axis=0), axis=0)
-                self.memory.remember(S, action, r, Sn, game_over)
-                if game_over:
-                    break
+    def _fill_memory(self, game, turns):
+        print("Fill memory with {} random action turns".format(turns))
+        game.reset()
+        F = np.expand_dims(game.get_frame(), axis=0)
+        S = np.repeat(F, self.num_frames, axis=0)
+        for turn in range(turns):
+            action = random.randrange(game.nb_actions)
+            Fn, r, game_over = game.play(action)
+            Sn = np.append(S[1:], np.expand_dims(Fn, axis=0), axis=0)
+            self.memory.remember(S, action, r, Sn, game_over)
+            if game_over:
+                game.reset()
+                F = np.expand_dims(game.get_frame(), axis=0)
+                S = np.repeat(F, self.num_frames, axis=0)
             update_progress("{0: 4d}/{1: 4d} | {2: 6d} | ".
-                format(episode+1, episodes, len(self.memory.memory)), float(episode+1)/episodes)
+                format(turn+1, turns, len(self.memory.memory)), float(turn+1)/turns)
         print("")
 
 if __name__ == '__main__':

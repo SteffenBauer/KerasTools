@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import keras
 import tensorflow as tf
-
-tf.logging.set_verbosity(tf.logging.ERROR)
+tf.get_logger().setLevel('ERROR')
 
 import catch
-import agent
+import parallel_agent as agent
 import memory
 
 #import cProfile
@@ -33,18 +34,18 @@ x = keras.layers.Dense(32, activation='relu')(x)
 act = keras.layers.Dense(game.nb_actions, activation='linear')(x)
 
 model = keras.models.Model(inputs=inp, outputs=act)
-model.compile(keras.optimizers.rmsprop(), 'logcosh')
+model.compile(keras.optimizers.adam(), 'logcosh')
 model.summary()
 
-m = memory.UniqMemory(memory_size=65536)
+m = memory.UniqMemory(memory_size=4096)
 a = agent.Agent(model=model, mem=m, num_frames = nb_frames)
 
 #pr = cProfile.Profile()
 #pr.enable()
 
-a.train(game, batch_size=32, epochs=20, train_interval=32, episodes=256,
+a.train(game, batch_size=64, epochs=20, train_interval=64, episodes=256,
             epsilon=[1.0, 0.0], epsilon_rate=0.25,
-            gamma=0.95, reset_memory=False, observe=0, verbose=2)
+            gamma=0.95, reset_memory=False, observe=128, verbose=1)
 
 #pr.disable()
 #stats = pstats.Stats(pr).sort_stats('cumulative')

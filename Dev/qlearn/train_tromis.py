@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import keras
 import tensorflow as tf
-
-tf.logging.set_verbosity(tf.logging.ERROR)
+tf.get_logger().setLevel('ERROR')
 
 import tromis
-import agent
+import parallel_agent as agent
 import memory
 
 #import cProfile
@@ -15,7 +16,7 @@ import memory
 width, height = 6, 9
 nb_frames = 2
 
-game = tromis.Tromis(width=width, height=height, max_turn=64)
+game = tromis.Tromis(width=width, height=height, max_turn=512)
 
 inpc = keras.layers.Input(shape=(height, width, 3))
 conv1 = keras.layers.Conv2D(16,3,padding='same',strides=2,activation='relu')(inpc)
@@ -33,7 +34,7 @@ x = keras.layers.Dense(32, activation='relu')(x)
 act = keras.layers.Dense(game.nb_actions, activation='linear')(x)
 
 model = keras.models.Model(inputs=inp, outputs=act)
-model.compile(keras.optimizers.rmsprop(), 'logcosh')
+model.compile(keras.optimizers.adam(), 'logcosh')
 model.summary()
 
 m = memory.UniqMemory(memory_size=65536)
@@ -42,9 +43,9 @@ a = agent.Agent(model=model, mem=m, num_frames = nb_frames)
 #pr = cProfile.Profile()
 #pr.enable()
 
-a.train(game, batch_size=64, epochs=100, train_interval=8, episodes=256,
+a.train(game, batch_size=512, epochs=100, train_interval=256, episodes=256,
             epsilon=0.0, # [0.5, 0.0], epsilon_rate=0.1,
-            gamma=0.95, reset_memory=False, observe=0)
+            gamma=0.95, reset_memory=False, observe=1024)
 
 #pr.disable()
 #stats = pstats.Stats(pr).sort_stats('cumulative')
