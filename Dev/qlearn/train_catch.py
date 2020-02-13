@@ -43,9 +43,9 @@ a = agent.Agent(model=model, mem=m, num_frames = nb_frames)
 #pr = cProfile.Profile()
 #pr.enable()
 
-a.train(game, batch_size=64, epochs=20, train_interval=64, episodes=256,
+a.train(game, batch_size=256, epochs=50, train_interval=64, turns_per_epoch=2048,
             epsilon=[1.0, 0.0], epsilon_rate=0.25,
-            gamma=0.95, reset_memory=False, observe=128, verbose=1)
+            gamma=0.95, reset_memory=False, observe=256, verbose=1)
 
 #pr.disable()
 #stats = pstats.Stats(pr).sort_stats('cumulative')

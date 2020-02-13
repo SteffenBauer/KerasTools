@@ -35,10 +35,10 @@ class Agent(object):
             self.memory = mem
         self.num_frames = num_frames
         self.history = {'gamma': 0, 'epsilon': [], 'memory_fill': [],
-                        'win_ratio': [], 'loss': [],
+                        'win_ratio': [], 'loss': [], 'finished': [],
                         'avg_score': [], 'max_score': []}
 
-    def train(self, game, epochs=1, initial_epoch=1, episodes=256,
+    def train(self, game, epochs=1, initial_epoch=1, turns_per_epoch=256,
               batch_size=32, train_interval=32, gamma=0.9, epsilon=[1., .1],
               epsilon_rate=0.5, reset_memory=False, observe=0,
               verbose=1, callbacks=[]):
@@ -104,8 +104,9 @@ class Agent(object):
         for epoch in range(initial_epoch, epochs+1):
             win_count, losses, scores = 0, [], []
             if reset_memory: self.memory.reset()
+            current_turns = 0
             current_episodes = 0
-            while current_episodes < episodes:
+            while current_turns < turns_per_epoch:
                 for i in range(train_interval):
                     if games[i].is_over():
                         games[i].reset()
@@ -123,6 +124,7 @@ class Agent(object):
                     self.memory.remember(S[i], actions[i], r, sn, game_over)
                     Sn.append(sn)
                     current_scores[i] += r
+                    current_turns += 1
                     if game_over:
                         scores.append(current_scores[i])
                         if games[i].is_won(): win_count += 1
@@ -131,25 +133,26 @@ class Agent(object):
                 result = self._replay(gamma, batch_size, game.nb_actions)
                 if result: losses.append(result)
                 if not header_printed and verbose > 0:
-                    print("{:^10s}|{:^9s}|{:^14s}|{:^9s}|{:^9s}|{:^15s}|{:^8s}".format(
-                        "Epoch","Epsilon","Episode","Loss", "Win", "Avg/Max Score", "Memory"))
+                    print("{:^10s}|{:^9s}|{:^16s}|{:^9s}|{:^10s}|{:^9s}|{:^17s}|{:^8s}".format(
+                        "Epoch","Epsilon","Turns","Loss","Finished","Win","Avg/Max Score","Memory"))
                     header_printed = True
                 if verbose == 1:
-                    update_progress("{0: 4d}/{1: 4d} |   {2:.2f}  | {3: 4d}".format(epoch, epochs, epsilon, current_episodes), float(current_episodes+1)/episodes)
+                    update_progress("{0: 4d}/{1: 4d} |   {2:.2f}  | {3: 6d}".format(epoch, epochs, epsilon, current_turns), float(current_turns/turns_per_epoch))
 
             loss = sum(losses)/len(losses)
-            win_ratio = float(win_count)/float(current_episodes)
-            avg_score = sum(scores)/float(current_episodes)
-            max_score = max(scores)
+            win_ratio = float(win_count)/float(current_episodes) if current_episodes > 0 else 0.0
+            avg_score = sum(scores)/float(current_episodes) if current_episodes > 0 else float('nan')
+            max_score = max(scores) if len(scores) > 0 else float('nan')
             memory_fill = len(self.memory.memory)
             if verbose == 2:
-                print("{0: 4d}/{1: 4d} |   {2:.2f}  |    {3: 4d}    ".format(epoch, epochs, epsilon, current_episodes), end=' ')
+                print("{0: 4d}/{1: 4d} |   {2:.2f}  |    {3: 4d}    ".format(epoch, epochs, epsilon, current_turns), end=' ')
             if verbose > 0:
-                print(" | {0: 2.4f} | {1:>7.2%} | {2: 5.2f} /{3: 5.2f}  | {4: 6d}".format(
-                    loss, win_ratio, avg_score, max_score, memory_fill))
+                print(" | {0: 2.4f} | {1: 8d} | {2:>7.2%} | {3: 6.2f} /{4: 6.2f}  | {5: 6d}".format(
+                    loss, current_episodes, win_ratio, avg_score, max_score, memory_fill))
 
             self.history['epsilon'].append(epsilon)
             self.history['loss'].append(loss)
+            self.history['finished'].append(current_episodes)
             self.history['win_ratio'].append(win_ratio)
             self.history['avg_score'].append(avg_score)
             self.history['max_score'].append(max_score)
@@ -207,7 +210,11 @@ class Agent(object):
         game.reset()
         F = np.expand_dims(game.get_frame(), axis=0)
         S = np.repeat(F, self.num_frames, axis=0)
-        for turn in range(turns):
+        turn = 0
+        #for turn in range(turns):
+        print("{0:10s}| {1:8s}".format("Turns", "Memory fill"))
+        while len(self.memory.memory) < turns:
+            turn += 1
             action = random.randrange(game.nb_actions)
             Fn, r, game_over = game.play(action)
             Sn = np.append(S[1:], np.expand_dims(Fn, axis=0), axis=0)
@@ -217,7 +224,7 @@ class Agent(object):
                 F = np.expand_dims(game.get_frame(), axis=0)
                 S = np.repeat(F, self.num_frames, axis=0)
             update_progress("{0: 4d}/{1: 4d} | {2: 6d} | ".
-                format(turn+1, turns, len(self.memory.memory)), float(turn+1)/turns)
+                format(turn, turns, len(self.memory.memory)), float(len(self.memory.memory))/turns)
         print("")
 
 if __name__ == '__main__':

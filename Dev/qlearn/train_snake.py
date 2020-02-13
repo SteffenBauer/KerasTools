@@ -16,7 +16,7 @@ import memory
 grid_size = 16
 nb_frames = 2
 
-game = snake.Snake(grid_size, max_turn=64)
+game = snake.Snake(grid_size, max_turn=256)
 
 inpc = keras.layers.Input(shape=(grid_size, grid_size, 3))
 conv1 = keras.layers.Conv2D(16,3,padding='same',strides=2,activation='relu')(inpc)
@@ -43,9 +43,9 @@ a = agent.Agent(model=model, mem=m, num_frames = nb_frames)
 #pr = cProfile.Profile()
 #pr.enable()
 
-a.train(game, batch_size=256, epochs=100, train_interval=256, episodes=256,
+a.train(game, batch_size=256, epochs=100, train_interval=64, turns_per_epoch=64*256,
             epsilon=[0.0, 0.0], epsilon_rate=0.1, 
-            gamma=0.95, reset_memory=False, observe=1024)
+            gamma=0.95, reset_memory=False, observe=256)
 
 #pr.disable()
 #stats = pstats.Stats(pr).sort_stats('cumulative')
