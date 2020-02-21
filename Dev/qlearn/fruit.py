@@ -1,0 +1,112 @@
+import random
+import numpy as np
+from game import Game
+
+class Fruit(Game):
+    def __init__(self, grid_size=12, max_turn = 24, with_poison=False, with_penalty=True):
+        self.grid_size = grid_size
+        self.with_poison = with_poison
+        self.penalty = -1.0/float(max_turn) if with_penalty else 0.0
+        self.max_turn = max_turn
+        self.reset()
+
+    @property
+    def name(self):       return "Fruit"
+    @property
+    def nb_actions(self): return 4
+    @property
+    def actions(self):    return {0:'left', 1:'right', 2:'up', 3:'down'}
+    
+    def _random_coords(self):
+        x = random.randrange(0, self.grid_size-1)
+        y = random.randrange(0, self.grid_size-1)
+        return x,y
+
+    def reset(self):
+        xa,ya = self._random_coords()
+        while True:
+            xf,yf = self._random_coords()
+            if (xf!=xa) or (xf!=ya): break
+        while True:
+            xp,yp = self._random_coords()
+            if ((xp!=xa) or (yp!=ya)) and ((xp!=xf) or (yp!=yf)): break
+        self.xa, self.ya = xa,ya
+        self.xf, self.yf = xf,yf
+        self.xp, self.yp = xp,yp
+
+        self.eaten = False
+        self.bumped = False
+        self.poisoned = False
+        self.starved = False
+        self.turn = 0
+
+    def play(self, action):
+        if self.is_over() or (action not in range(self.nb_actions)):
+            return
+
+        if action == 0: self.ya -= 1
+        if action == 1: self.ya += 1
+        if action == 2: self.xa -= 1
+        if action == 3: self.xa += 1
+
+        self.check_fruit()
+        if not self.is_over(): self.check_border()
+        if not self.is_over(): self.check_poison()
+        if not self.is_over(): self.check_starved()
+        
+        return (self.get_frame(), self.get_score(), self.is_over())
+
+    def check_fruit(self):
+        if (self.xa == self.xf) and (self.ya == self.yf):
+            self.eaten = True
+
+    def check_border(self):
+        if self.ya < 0:
+            self.ya = 0
+            self.bumped = True
+        if self.ya >= self.grid_size:
+            self.ya = self.grid_size-1
+            self.bumped = True
+        if self.xa < 0:
+            self.xa = 0
+            self.bumped = True
+        if self.xa >= self.grid_size:
+            self.xa = self.grid_size-1
+            self.bumped = True
+
+    def check_poison(self):
+        if self.with_poison and (self.xa == self.xp) and (self.ya == self.yp):
+            self.poisoned = True
+   
+    def check_starved(self):
+        self.turn += 1
+        if (self.max_turn is not None) and (self.turn > self.max_turn):
+            self.starved = True
+
+    def get_state(self):
+        canvas = np.zeros((self.grid_size,self.grid_size,3))
+        canvas[self.xa, self.ya, :] = (0,0,1) # Blue agent
+        canvas[self.xf, self.yf, :] = (1,1,0) # Yellow fruit
+        if self.with_poison:
+            canvas[self.xp, self.yp, :] = (0,1,1) # Cyan poison pill
+        if self.starved or self.bumped or self.poisoned:
+            canvas[self.xa, self.ya, :] = (1,0,0) # Red agent if lost
+        if self.eaten:
+            canvas[self.xa, self.ya, :] = (0,1,0) # Green agent if won
+        return canvas
+
+    def get_score(self):
+        if self.starved or self.bumped or self.poisoned:
+            score = -1
+        elif self.eaten:
+            score = 1
+        else:
+            score = self.penalty
+        return score
+
+    def is_over(self):
+        return self.eaten or self.starved or self.bumped or self.poisoned
+
+    def is_won(self):
+        return self.is_over() and not (self.starved or self.bumped or self.poisoned)
+
