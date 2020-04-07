@@ -6,7 +6,7 @@ class Fruit(Game):
     def __init__(self, grid_size=12, max_turn = 24, with_poison=False, with_penalty=True):
         self.grid_size = grid_size
         self.with_poison = with_poison
-        self.penalty = -1.0/float(max_turn) if with_penalty else 0.0
+        self.penalty = -0.5/float(max_turn) if with_penalty else 0.0
         self.max_turn = max_turn
         self.reset()
 
