@@ -27,12 +27,14 @@ class Fruit(Game):
         while True:
             xf,yf = self._random_coords()
             if (xf!=xa) or (xf!=ya): break
-        while True:
-            xp,yp = self._random_coords()
-            if ((xp!=xa) or (yp!=ya)) and ((xp!=xf) or (yp!=yf)): break
         self.xa, self.ya = xa,ya
         self.xf, self.yf = xf,yf
-        self.xp, self.yp = xp,yp
+
+        if self.with_poison:
+            while True:
+                xp,yp = self._random_coords()
+                if ((xp!=xa) or (yp!=ya)) and ((xp!=xf) or (yp!=yf)): break
+            self.xp, self.yp = xp,yp
 
         self.eaten = False
         self.bumped = False
@@ -50,9 +52,9 @@ class Fruit(Game):
         if action == 3: self.xa += 1
 
         self.check_fruit()
-        if not self.is_over(): self.check_border()
-        if not self.is_over(): self.check_poison()
-        if not self.is_over(): self.check_starved()
+        if not self.is_over():                      self.check_border()
+        if self.with_poison and not self.is_over(): self.check_poison()
+        if not self.is_over():                      self.check_starved()
         
         return (self.get_frame(), self.get_score(), self.is_over())
 
@@ -96,7 +98,7 @@ class Fruit(Game):
         return canvas
 
     def get_score(self):
-        if self.starved or self.bumped or self.poisoned:
+        if self.starved or self.bumped or (self.with_poison and self.poisoned):
             score = -1
         elif self.eaten:
             score = 1
@@ -105,8 +107,8 @@ class Fruit(Game):
         return score
 
     def is_over(self):
-        return self.eaten or self.starved or self.bumped or self.poisoned
+        return self.eaten or self.starved or self.bumped or (self.with_poison and self.poisoned)
 
     def is_won(self):
-        return self.is_over() and not (self.starved or self.bumped or self.poisoned)
+        return self.is_over() and not (self.starved or self.bumped or (self.with_poison and self.poisoned))
 
