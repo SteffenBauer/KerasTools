@@ -1,0 +1,8 @@
+tensorflow>=2.0.0
+packaging
+Pillow==6.2.2
+ipywidgets
+ipyevents
+bqplot
+bokeh
+
