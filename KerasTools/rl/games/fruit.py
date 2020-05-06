@@ -15,7 +15,7 @@ class Fruit(Game):
     @property
     def nb_actions(self): return 4
     @property
-    def actions(self):    return {0:'left', 1:'right', 2:'up', 3:'down'}
+    def actions(self):    return {0: 'left', 1: 'right', 2: 'up', 3: 'down'}
     
     def _random_coords(self):
         x = random.randrange(0, self.grid_size-1)

@@ -19,7 +19,7 @@ class Catch(Game):
     @property
     def nb_actions(self): return 3
     @property
-    def actions(self):    return {0:'left', 1:'idle', 2:'right'}
+    def actions(self):    return {0: 'left', 1: 'skip', 2: 'right'}
 
     def play(self, action):
         if self.is_over() or action not in range(self.nb_actions):

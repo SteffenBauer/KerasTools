@@ -15,7 +15,7 @@ class Tromis(Game):
     @property
     def nb_actions(self): return 5
     @property
-    def actions(self):    return {0:'move-left', 1:'move-right', 2:'skip', '3':'rotate-left', '4':'rotate-right'}
+    def actions(self):    return {0: 'left', 1: 'right', 2: 'skip', '3': 'rotateleft', '4': 'rotateright'}
     
     def reset(self):
         self.lost = False

@@ -15,7 +15,7 @@ class Snake(Game):
     @property
     def nb_actions(self): return 3
     @property
-    def actions(self):    return {0:'left', 1:'right', 2:'forward'}
+    def actions(self):    return {0: 'left', 1: 'right', 2: 'forward'}
 
     def play(self, action):
         if self.is_over() or (action not in range(self.nb_actions)):
