@@ -34,5 +34,5 @@ history = history.HistoryLog("tromis")
 a.train(game, batch_size=32, epochs=500, episodes=256,
             epsilon=[0.5, 0.0], epsilon_rate=0.1,
             gamma=0.95, reset_memory=False, observe=1024, verbose=1,
-            callbacks=[history])
+            callbacks=[])
 

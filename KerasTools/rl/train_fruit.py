@@ -2,8 +2,9 @@
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-import keras
 import tensorflow as tf
+import tensorflow.keras as keras
+tf.compat.v1.disable_eager_execution()
 tf.get_logger().setLevel('ERROR')
 
 from games import fruit
@@ -11,7 +12,7 @@ from agents import dqn
 from memory import uniqmemory
 from callbacks import history
 
-game = fruit.Fruit(with_poison=False)
+game = fruit.Fruit(with_poison=True)
 
 grid_size = game.grid_size
 nb_frames = 1
@@ -48,5 +49,5 @@ m = uniqmemory.UniqMemory(memory_size=65536)
 a = dqn.Agent(model=model, mem=m, num_frames = nb_frames)
 history = history.HistoryLog("fruit", {**params, **rlparams})
 
-a.train(game, verbose=1, callbacks=[history], **params)
+a.train(game, verbose=1, callbacks=[], **params)
 

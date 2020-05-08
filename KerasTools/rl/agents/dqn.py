@@ -17,7 +17,7 @@ class Agent(object):
       model: Keras network. Its shape must be compatible with the game.
         - input_shape: 5D tensor with shape (batch, nb_frames, height, width, channels)
         - output_shape: 2D tensor with shape (batch, nb_actions)
-      mem: Replay memory object (instance of qlearn.memory.Memory).
+      mem: Replay memory object (instance of rl.memory.Memory).
         Defaults to `BasicMemory` if not specified.
       memory_size: Size of replay memory. Default to 1000.
       num_frames: Integer. Number of past game state frames to show to the network.
@@ -63,7 +63,7 @@ class Agent(object):
           observe: Integer. When specified, fill the replay memory with random game moves for this number of epochs.
           verbose: Integer. 0, 1, or 2. Verbosity mode.
             0 = silent, 1 = progress bar, 2 = one line per epoch.
-          callbacks: List of callback objects (instance of qlearn.callbacks.Callback)
+          callbacks: List of callback objects (instance of rl.callbacks.Callback)
 
         # Returns
           A History dictionary, containing records of training parameters during successive epochs:
@@ -103,7 +103,7 @@ class Agent(object):
                     action = self.act(game, S, epsilon)
                     Fn, r, game_over = game.play(action)
                     for c in callbacks: 
-                        c.game_frame(game.get_frame())
+                        c.game_step(Fn, action, r, game_over)
                     Sn = np.append(S[1:], np.expand_dims(Fn, axis=0), axis=0)
                     self.memory.remember(S, action, r, Sn, game_over)
                     S = np.copy(Sn)
@@ -159,7 +159,7 @@ class Agent(object):
         Choose a game action on a given game state.
 
         # Arguments
-          game: Game object (instance of a qlearn.game.Game subclass)
+          game: Game object (instance of a rl.game.Game subclass)
           state: Game state as numpy array of shape (nb_frames, height, width, channels)
           epsilon: Float between 0.0 and 1.0. Epsilon factor.
             Probability that the agent will choose a random action instead of using the DQN.
@@ -207,4 +207,3 @@ class Agent(object):
 
 if __name__ == '__main__':
     pass
-

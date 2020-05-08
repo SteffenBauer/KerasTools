@@ -2,8 +2,9 @@
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-import keras
 import tensorflow as tf
+import tensorflow.keras as keras
+tf.compat.v1.disable_eager_execution()
 tf.get_logger().setLevel('ERROR')
 
 from games import catch
@@ -23,7 +24,7 @@ x = keras.layers.Dense(32, activation='relu')(x)
 act = keras.layers.Dense(game.nb_actions, activation='linear')(x)
 
 model = keras.models.Model(inputs=inp, outputs=act)
-model.compile(keras.optimizers.rmsprop(), 'logcosh')
+model.compile(keras.optimizers.RMSprop(), 'logcosh')
 model.summary()
 
 m = uniqmemory.UniqMemory(memory_size=8192)
@@ -32,6 +33,6 @@ history = history.HistoryLog("catch")
 
 a.train(game, batch_size=32, epochs=20, episodes=256, train_interval=32,
             epsilon=[0.0, 0.0], epsilon_rate=0.25,
-            gamma=0.95, reset_memory=False, observe=128, verbose=1,
+            gamma=0.98, reset_memory=False, observe=128, verbose=1,
             callbacks = [history])
 

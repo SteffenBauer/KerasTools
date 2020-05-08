@@ -15,12 +15,15 @@ class Callback(object):
         """
         pass
 
-    def game_frame(self, frame): 
+    def game_step(self, frame, action, reward, isOver): 
         """
         Called when the agent has played an action
 
         # Arguments
-            frame: Game state frame after the action in format (height, width, channels)
+            frame: Game state frame after the action (height, width, channels)
+            action: Chosen action (numeric action code)
+            reward: Received reward (float)
+            isOver: Indicates game over (boolean)
         """
         pass
 
