@@ -15,7 +15,7 @@ class Tromis(Game):
     @property
     def nb_actions(self): return 5
     @property
-    def actions(self):    return {0: 'left', 1: 'right', 2: 'skip', '3': 'rotateleft', '4': 'rotateright'}
+    def actions(self):    return {0: 'left', 1: 'rotateleft', 2: 'skip', 3: 'rotateright', 4: 'right'}
     
     def reset(self):
         self.lost = False
@@ -75,10 +75,10 @@ class Tromis(Game):
             return (self.get_frame(), self.get_score(), self.is_over())
             
         actions = [lambda r,c,o: (r,c-1,o),
-                   lambda r,c,o: (r,c+1,o),
-                   lambda r,c,o: (r,c,o),
                    lambda r,c,o: (r,c,(o+1)%4),
-                   lambda r,c,o: (r,c,(o-1)%4)]
+                   lambda r,c,o: (r,c,o),
+                   lambda r,c,o: (r,c,(o-1)%4),
+                   lambda r,c,o: (r,c+1,o)]
         nrow,ncol,nori = actions[action](self.p_row, self.p_column, self.p_orient)
 
         if self._valid_position(nrow,ncol,nori):

@@ -15,7 +15,7 @@ class Snake(Game):
     @property
     def nb_actions(self): return 3
     @property
-    def actions(self):    return {0: 'left', 1: 'right', 2: 'forward'}
+    def actions(self):    return {0: 'rotateleft', 1: 'forward', 2: 'rotateright'}
 
     def play(self, action):
         if self.is_over() or (action not in range(self.nb_actions)):
@@ -48,20 +48,20 @@ class Snake(Game):
     def move_snake(self, action):
         h = self.snake[0]
         n = self.snake[1]
-        if ((h[1] < n[1] and action == 2) or
+        if ((h[1] < n[1] and action == 1) or
             (h[0] < n[0] and action == 0) or
-            (h[0] > n[0] and action == 1)):
+            (h[0] > n[0] and action == 2)):
             p = (h[0], h[1]-1)
-        elif ((h[1] < n[1] and action == 1) or
+        elif ((h[1] < n[1] and action == 2) or
               (h[1] > n[1] and action == 0) or
-              (h[0] < n[0] and action == 2)):
+              (h[0] < n[0] and action == 1)):
             p = (h[0]-1, h[1])
         elif ((h[1] < n[1] and action == 0) or
-              (h[1] > n[1] and action == 1) or
-              (h[0] > n[0] and action == 2)):
+              (h[1] > n[1] and action == 2) or
+              (h[0] > n[0] and action == 1)):
             p = (h[0]+1, h[1])
-        elif ((h[1] > n[1] and action == 2) or
-              (h[0] < n[0] and action == 1) or
+        elif ((h[1] > n[1] and action == 1) or
+              (h[0] < n[0] and action == 2) or
               (h[0] > n[0] and action == 0)):
             p = (h[0], h[1]+1)
         self.snake.insert(0, p)
