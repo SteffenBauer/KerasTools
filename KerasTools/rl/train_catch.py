@@ -27,12 +27,12 @@ model = keras.models.Model(inputs=inp, outputs=act)
 model.compile(keras.optimizers.RMSprop(), 'logcosh')
 model.summary()
 
-m = uniqmemory.UniqMemory(memory_size=8192)
-a = dqn.Agent(model=model, mem=m, num_frames = nb_frames)
-history = history.HistoryLog("catch")
+memory = uniqmemory.UniqMemory(memory_size=8192)
+agent = dqn.Agent(model, memory)
+#history = history.HistoryLog("catch")
 
-a.train(game, batch_size=32, epochs=20, episodes=256, train_interval=32,
-            epsilon=[0.0, 0.0], epsilon_rate=0.25,
+agent.train(game, batch_size=32, epochs=20, episodes=256, train_interval=32,
+            epsilon=[1.0, 0.0], epsilon_rate=0.25,
             gamma=0.98, reset_memory=False, observe=128, verbose=1,
-            callbacks = [history])
+            callbacks = [])
 

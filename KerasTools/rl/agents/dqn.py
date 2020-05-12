@@ -20,14 +20,18 @@ class Agent(object):
       mem: Replay memory object (instance of rl.memory.Memory).
         Defaults to `BasicMemory` if not specified.
       memory_size: Size of replay memory. Default to 1000.
-      num_frames: Integer. Number of past game state frames to show to the network.
-        Defaults to 1.
     """
 
-    def __init__(self, model, mem, memory_size=1000, num_frames=1):
-        self.model = model
+    def __init__(self, model, mem):
+        self.model  = model
         self.memory = mem
-        self.num_frames = num_frames
+
+        self.num_frames = self.model.input_shape[1]
+        self.height     = self.model.input_shape[2]
+        self.width      = self.model.input_shape[3]
+        self.channels   = self.model.input_shape[4]
+        self.nb_actions = self.model.output_shape[1]
+
         self.history = {'gamma': 0, 'epsilon': [], 'memory_fill': [],
                         'win_ratio': [], 'loss': [], 
                         'avg_score': [], 'max_score': []}
@@ -110,7 +114,7 @@ class Agent(object):
                     turn_count += 1
                     current_score += r
                     if (turn_count >= train_interval) or (episode == episodes-1 and game_over):
-                        result = self._replay(gamma, batch_size, game.nb_actions)
+                        result = self._replay(gamma, batch_size)
                         if result: losses.append(result)
                         turn_count = 0
                         if not header_printed and verbose > 0:
@@ -169,18 +173,18 @@ class Agent(object):
 
         """
         if random.random() <= epsilon:
-            return random.randrange(game.nb_actions)
+            return random.randrange(self.nb_actions)
         act_values = self.model.predict(np.expand_dims(np.asarray(state), axis=0))
         return int(np.argmax(act_values[0]))
 
-    def _replay(self, gamma, batch_size, nb_actions):
+    def _replay(self, gamma, batch_size):
         batch = self.memory.get_batch(self.model, batch_size)
         if batch:
             states, actions, rewards, next_states, game_over_s = zip(*batch)
             predicted_rewards = self.model.predict(np.asarray(states))
             predicted_next_rewards = self.model.predict(np.asarray(next_states))
             rewards = list(rewards)
-            targets = np.zeros((len(rewards),nb_actions))
+            targets = np.zeros((len(rewards), self.nb_actions))
             for i in range(len(predicted_rewards)):
                 targets[i] = predicted_rewards[i]
                 targets[i,actions[i]] = rewards[i]
@@ -195,7 +199,7 @@ class Agent(object):
             F = np.expand_dims(game.get_frame(), axis=0)
             S = np.repeat(F, self.num_frames, axis=0)
             while True:
-                action = random.randrange(game.nb_actions)
+                action = random.randrange(self.nb_actions)
                 Fn, r, game_over = game.play(action)
                 Sn = np.append(S[1:], np.expand_dims(Fn, axis=0), axis=0)
                 self.memory.remember(S, action, r, Sn, game_over)

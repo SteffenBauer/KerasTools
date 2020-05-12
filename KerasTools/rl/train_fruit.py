@@ -24,7 +24,7 @@ x = keras.layers.Dense(64, activation='relu')(x)
 act = keras.layers.Dense(game.nb_actions, activation='linear')(x)
 
 model = keras.models.Model(inputs=inp, outputs=act)
-model.compile(keras.optimizers.rmsprop(), 'logcosh')
+model.compile(keras.optimizers.RMSprop(), 'logcosh')
 model.summary()
 
 params = {
@@ -45,9 +45,9 @@ rlparams = {
     'optimizer': 'RMSProp'
 }
 
-m = uniqmemory.UniqMemory(memory_size=65536)
-a = dqn.Agent(model=model, mem=m, num_frames = nb_frames)
-history = history.HistoryLog("fruit", {**params, **rlparams})
+memory = uniqmemory.UniqMemory(memory_size=65536)
+agent = dqn.Agent(model, memory)
+#history = history.HistoryLog("fruit", {**params, **rlparams})
 
-a.train(game, verbose=1, callbacks=[], **params)
+agent.train(game, verbose=1, callbacks=[], **params)
 
