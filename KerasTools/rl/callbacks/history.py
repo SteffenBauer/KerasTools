@@ -10,7 +10,7 @@ class HistoryLog(Callback):
         with open(self.filename, 'w+') as fp:
             if params is not None:
                 for k,v in sorted(params.items()):
-                    fp.write("{:16s}: {}\n".format(k,v))
+                    fp.write("{:18s}: {}\n".format(k,v))
                 fp.write("\n")
             fp.write('Epoch, Epsilon,    Loss, Win Ratio, Avg Score, Max Score,   Memory,      Timestamp\n')
     def epoch_end(self, *args):

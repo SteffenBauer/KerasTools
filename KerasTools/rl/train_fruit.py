@@ -8,46 +8,56 @@ tf.compat.v1.disable_eager_execution()
 tf.get_logger().setLevel('ERROR')
 
 from games import fruit
-from agents import dqn
+from agents import ddqn
 from memory import uniqmemory
 from callbacks import history
 
-game = fruit.Fruit(with_poison=True)
-
-grid_size = game.grid_size
+grid_size = 12
 nb_frames = 1
 
+game = fruit.Fruit(grid_size, with_poison=True)
+
 inp = keras.layers.Input(shape=(nb_frames, grid_size, grid_size, 3))
-x = keras.layers.Conv3D(32,5,padding='same',strides=1,activation='relu')(inp)
+x = keras.layers.Conv3D(32,3,padding='same',strides=2,activation='relu')(inp)
 x = keras.layers.Flatten()(x)
 x = keras.layers.Dense(64, activation='relu')(x)
 act = keras.layers.Dense(game.nb_actions, activation='linear')(x)
 
 model = keras.models.Model(inputs=inp, outputs=act)
-model.compile(keras.optimizers.RMSprop(), 'logcosh')
+model.compile(keras.optimizers.Adam(), 'logcosh')
 model.summary()
 
 params = {
     'batch_size': 32,
     'epochs': 100,
-    'episodes': 256,
-    'train_interval': 32,
-    'epsilon': [0.1, 0.0],
-    'epsilon_rate': 0.1,
+    'episodes': 32,
+    'target_sync': 96,
+    'epsilon_start': 0.5,
+    'epsilon_decay': 0.75,
+    'epsilon_final': 0.0,
     'gamma': 0.95,
     'reset_memory': False,
     'observe': 128
 }
 
 rlparams = {
-    'memory': 'UniqMemory',
-    'memory_size': 65536,
-    'optimizer': 'RMSProp'
+    'rl.memory': 'UniqMemory',
+    'rl.memory_size': 65536,
+    'rl.optimizer': 'Adam',
+    'rl.with_target': True,
+    'rl.nb_frames': nb_frames
 }
 
-memory = uniqmemory.UniqMemory(memory_size=65536)
-agent = dqn.Agent(model, memory)
-#history = history.HistoryLog("fruit", {**params, **rlparams})
+gameparams = {
+    'game.grid_size': game.grid_size,
+    'game.with_poison': game.with_poison,
+    'game.penalty': game.penalty,
+    'game.max_turn': game.max_turn
+}
 
-agent.train(game, verbose=1, callbacks=[], **params)
+memory = uniqmemory.UniqMemory(memory_size=rlparams['rl.memory_size'])
+agent = ddqn.Agent(model, memory, with_target=rlparams['rl.with_target'])
+history = history.HistoryLog("fruit", {**params, **rlparams, **gameparams})
+
+agent.train(game, verbose=1, callbacks=[history], **params)
 

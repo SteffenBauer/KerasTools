@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import tensorflow.keras as keras
 import sys
 import random
 
@@ -22,8 +23,11 @@ class Agent(object):
       memory_size: Size of replay memory. Default to 1000.
     """
 
-    def __init__(self, model, mem):
+    def __init__(self, model, mem, with_target = False):
         self.model  = model
+        self.with_target = with_target
+        if self.with_target:
+            self.target = keras.models.clone_model(model)
         self.memory = mem
 
         self.num_frames = self.model.input_shape[1]
@@ -37,9 +41,9 @@ class Agent(object):
                         'avg_score': [], 'max_score': []}
 
     def train(self, game, epochs=1, initial_epoch=1, episodes=256,
-              batch_size=32, train_interval=32, gamma=0.9, epsilon=[1., .1],
-              epsilon_rate=0.5, reset_memory=False, observe=0, 
-              verbose=1, callbacks=[]):
+              batch_size=32, target_sync=256, gamma=0.9,
+              epsilon_start=1.0, epsilon_decay=0.5, epsilon_final=0.0,
+              reset_memory=False, observe=0, verbose=1, callbacks=[]):
 
         """
         Train the DQN agent on a game
@@ -54,14 +58,11 @@ class Agent(object):
           episodes: Integer. Number of game episodes to play during one epoch.
           batch_size: Integer. Number of samples per gradient update.
             If unspecified, `batch_size` will default to 32.
-          train_interval: Integer. Do one batch of gradient update 
-            after that number of game turns were played.
+          target_sync: Update the target network after these number of turns were played.
           gamma: Float between 0.0 and < 1.0. Discount factor.
-          epsilon: Exploration factor. It can be:
-            - Float between 0.0 and 1.0, to set a fixed factor for all epochs.
-            - List or tuple with 2 floats, to set a starting and a final value.
-          epsilon_rate: Float between 0.0 and 1.0. Decay factor for epsilon.
-            Epsilon will reach the final value when this percentage of epochs is reached.
+          epsilon_start: Starting exploration factor between 1.0 and 0.0.
+          epsilon_decay: Float between 0.0 and 1.0. Decay factor for epsilon.
+          epsilon_final: Minimum value of epsilon.
           reset_memory: Boolean. Sets if the replay memory should be reset before each epoch.
             Default to `False`.
           observe: Integer. When specified, fill the replay memory with random game moves for this number of epochs.
@@ -81,20 +82,19 @@ class Agent(object):
         """
 
         self.history['gamma'] = gamma
-
+        epsilon = epsilon_start
         if observe > 0:
             self._fill_memory(game, observe)
 
-        if type(epsilon) in {tuple, list}:
-            delta =  ((epsilon[0] - epsilon[1]) / (epochs * epsilon_rate))
-            epsilon, final_epsilon = epsilon
-        else:
-            delta = None
-            final_epsilon = epsilon
-        
-        header_printed = False
+        if verbose > 0:
+            print("{:^10s}|{:^9s}|{:^14s}|{:^9s}|{:^9s}|{:^15s}|{:^8s}".format("Epoch", "Epsilon", "Episode", "Loss", "Win", "Avg/Max Score", "Memory"))
+
+        if self.with_target:
+            self.target.set_weights(self.model.get_weights())
+            sync_count = 0
+
         for epoch in range(initial_epoch, epochs+1):
-            win_count, turn_count, losses, scores = 0, 0, [], []
+            win_count, losses, scores = 0, [], []
             if reset_memory: self.memory.reset()
             for episode in range(episodes):
                 game.reset()
@@ -111,31 +111,32 @@ class Agent(object):
                     Sn = np.append(S[1:], np.expand_dims(Fn, axis=0), axis=0)
                     self.memory.remember(S, action, r, Sn, game_over)
                     S = np.copy(Sn)
-                    turn_count += 1
                     current_score += r
-                    if (turn_count >= train_interval) or (episode == episodes-1 and game_over):
+                    if len(self.memory.memory) >= batch_size:
                         result = self._replay(gamma, batch_size)
                         if result: losses.append(result)
-                        turn_count = 0
-                        if not header_printed and verbose > 0:
-                            print("{:^10s}|{:^9s}|{:^14s}|{:^9s}|{:^9s}|{:^15s}|{:^8s}".format("Epoch","Epsilon","Episode","Loss", "Win", "Avg/Max Score", "Memory"))
-                            header_printed = True
-                        if verbose == 1:
-                            update_progress("{0: 4d}/{1: 4d} |   {2:.2f}  | {3: 4d}".format(epoch, epochs, epsilon, episode), float(episode+1)/episodes)
+                    if self.with_target:
+                        sync_count += 1
+                        if (sync_count % target_sync) == 0:
+                            self.target.set_weights(self.model.get_weights())
                     if game_over:
                         scores.append(current_score)
                         if game.is_won(): win_count += 1
                         for c in callbacks:
                             c.game_over()
                         break
-                        
+                if verbose == 1:
+                    update_progress("{0: 4d}/{1: 4d} |   {2:.2f}  | {3: 4d}".format(
+                        epoch, epochs, epsilon, episode), float(episode+1)/episodes)
+
             loss = sum(losses)/len(losses)
             win_ratio = float(win_count)/float(episodes)
             avg_score = sum(scores)/float(episodes)
             max_score = max(scores)
             memory_fill = len(self.memory.memory)
             if verbose == 2:
-                print("{0: 4d}/{1: 4d} |   {2:.2f}  |    {3: 4d}    ".format(epoch, epochs, epsilon, episode), end=' ')
+                print("{0: 4d}/{1: 4d} |   {2:.2f}  |    {3: 4d}    ".format(
+                    epoch, epochs, epsilon, episode), end=' ')
             if verbose > 0:
                 print(" | {0: 2.4f} | {1:>7.2%} | {2: 5.2f} /{3: 5.2f}  | {4: 6d}".format(
                     loss, win_ratio, avg_score, max_score, memory_fill))
@@ -153,8 +154,8 @@ class Agent(object):
                     win_ratio, avg_score, max_score, memory_fill
                 )
 
-            if epsilon > final_epsilon and delta:
-                epsilon = max(final_epsilon, epsilon - delta)
+            epsilon *= epsilon_decay
+            epsilon = max(epsilon, epsilon_final)
 
         return self.history
 
@@ -182,7 +183,10 @@ class Agent(object):
         if batch:
             states, actions, rewards, next_states, game_over_s = zip(*batch)
             predicted_rewards = self.model.predict(np.asarray(states))
-            predicted_next_rewards = self.model.predict(np.asarray(next_states))
+            if self.with_target:
+                predicted_next_rewards = self.target.predict(np.asarray(next_states))
+            else:
+                predicted_next_rewards = self.model.predict(np.asarray(next_states))
             rewards = list(rewards)
             targets = np.zeros((len(rewards), self.nb_actions))
             for i in range(len(predicted_rewards)):
