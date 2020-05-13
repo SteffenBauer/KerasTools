@@ -12,7 +12,7 @@ from agents import ddqn
 from memory import uniqmemory
 from callbacks import history
 
-grid_size = 16
+grid_size = 12
 nb_frames = 1
 
 game = catch.Catch(grid_size)
@@ -24,7 +24,7 @@ x = keras.layers.Dense(32, activation='relu')(x)
 act = keras.layers.Dense(game.nb_actions, activation='linear')(x)
 
 model = keras.models.Model(inputs=inp, outputs=act)
-model.compile(keras.optimizers.Adam(), 'logcosh')
+model.compile(keras.optimizers.RMSprop(), 'logcosh')
 model.summary()
 
 params = {
@@ -43,8 +43,8 @@ params = {
 rlparams = {
     'rl.memory': 'UniqMemory',
     'rl.memory_size': 8192,
-    'rl.optimizer': 'Adam',
-    'rl.with_target': False,
+    'rl.optimizer': 'RMSprop',
+    'rl.with_target': True,
     'rl.nb_frames': nb_frames
 }
 

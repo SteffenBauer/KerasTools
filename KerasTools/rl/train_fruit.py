@@ -24,7 +24,7 @@ x = keras.layers.Dense(64, activation='relu')(x)
 act = keras.layers.Dense(game.nb_actions, activation='linear')(x)
 
 model = keras.models.Model(inputs=inp, outputs=act)
-model.compile(keras.optimizers.Adam(), 'logcosh')
+model.compile(keras.optimizers.RMSprop(), 'logcosh')
 model.summary()
 
 params = {
@@ -43,7 +43,7 @@ params = {
 rlparams = {
     'rl.memory': 'UniqMemory',
     'rl.memory_size': 65536,
-    'rl.optimizer': 'Adam',
+    'rl.optimizer': 'RMSprop',
     'rl.with_target': True,
     'rl.nb_frames': nb_frames
 }
