@@ -3,10 +3,12 @@ import numpy as np
 from .game import Game
 
 class Fruit(Game):
-    def __init__(self, grid_size=12, max_turn = 24, with_poison=False, with_penalty=True):
+    def __init__(self, grid_size=12, max_turn = 24, with_border=True, with_poison=False, with_penalty=True, fixed=False):
         self.grid_size = grid_size
+        self.with_border = with_border
         self.with_poison = with_poison
-        self.penalty = -0.5/float(max_turn) if with_penalty else 0.0
+        self.fixed = fixed
+        self.penalty = -0.1/float(max_turn) if with_penalty else 0.0
         self.max_turn = max_turn
         self.reset()
 
@@ -23,16 +25,16 @@ class Fruit(Game):
         return x,y
 
     def reset(self):
-        xa,ya = self._random_coords()
+        xa,ya = (0,0) if self.fixed else self._random_coords()
         while True:
-            xf,yf = self._random_coords()
+            xf,yf = (self.grid_size-1, self.grid_size-1) if self.fixed else self._random_coords()
             if (xf!=xa) or (xf!=ya): break
         self.xa, self.ya = xa,ya
         self.xf, self.yf = xf,yf
 
         if self.with_poison:
             while True:
-                xp,yp = self._random_coords()
+                xp,yp = (int(self.grid_size/2), int(self.grid_size/2)) if self.fixed else self._random_coords()
                 if ((xp!=xa) or (yp!=ya)) and ((xp!=xf) or (yp!=yf)): break
             self.xp, self.yp = xp,yp
 
@@ -65,16 +67,16 @@ class Fruit(Game):
     def check_border(self):
         if self.ya < 0:
             self.ya = 0
-            self.bumped = True
+            if (self.with_border): self.bumped = True
         if self.ya >= self.grid_size:
             self.ya = self.grid_size-1
-            self.bumped = True
+            if (self.with_border): self.bumped = True
         if self.xa < 0:
             self.xa = 0
-            self.bumped = True
+            if (self.with_border): self.bumped = True
         if self.xa >= self.grid_size:
             self.xa = self.grid_size-1
-            self.bumped = True
+            if (self.with_border): self.bumped = True
 
     def check_poison(self):
         if self.with_poison and (self.xa == self.xp) and (self.ya == self.yp):
@@ -88,6 +90,7 @@ class Fruit(Game):
     def get_state(self):
         canvas = np.zeros((self.grid_size,self.grid_size,3))
         canvas[self.xa, self.ya, :] = (0.5,0.5,0.5) # Grey mouse
+        #canvas[self.xa, self.ya, :] = (0,0,1) # Blue mouse
         canvas[self.xf, self.yf, :] = (1,1,0) # Yellow fruit
         if self.with_poison:
             canvas[self.xp, self.yp, :] = (0,1,1) # Cyan poison
@@ -98,7 +101,9 @@ class Fruit(Game):
         return canvas
 
     def get_score(self):
-        if self.starved or self.bumped or (self.with_poison and self.poisoned):
+        if self.starved:
+            score = 0
+        elif self.is_lost():
             score = -1
         elif self.eaten:
             score = 1
@@ -106,9 +111,12 @@ class Fruit(Game):
             score = self.penalty
         return score
 
+    def is_lost(self):
+        return self.starved or (self.with_border and self.bumped) or (self.with_poison and self.poisoned)
+
     def is_over(self):
-        return self.eaten or self.starved or self.bumped or (self.with_poison and self.poisoned)
+        return self.eaten or self.is_lost()
 
     def is_won(self):
-        return self.is_over() and not (self.starved or self.bumped or (self.with_poison and self.poisoned))
+        return self.is_over() and not self.is_lost()
 

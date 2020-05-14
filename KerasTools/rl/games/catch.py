@@ -4,8 +4,9 @@ from .game import Game
 
 class Catch(Game):
 
-    def __init__(self, grid_size=10):
+    def __init__(self, grid_size=10, with_penalty=False):
         self.grid_size = grid_size
+        self.with_penalty = with_penalty
         self.reset()
 
     def reset(self):
@@ -32,7 +33,7 @@ class Catch(Game):
         else:
             new_basket = basket
         self.state = [fy+1, fx, new_basket]
-        self.penalty = 0.0 if action == 1 else -0.1
+        self.penalty = 0.0 if action == 1 else -0.05
         return (self.get_frame(), self.get_score(), self.is_over())
 
     def get_state(self):
@@ -54,7 +55,7 @@ class Catch(Game):
         elif self.is_over():
             return -1.0
         else:
-            return 0.0 # self.penalty
+            return self.penalty if self.with_penalty else 0.0
 
     def is_over(self):
         return self.state[0] == self.grid_size-1
