@@ -4,9 +4,10 @@ from .game import Game
 
 class Catch(Game):
 
-    def __init__(self, grid_size=10, with_penalty=False):
+    def __init__(self, grid_size=10, with_penalty=False, split_reward=False):
         self.grid_size = grid_size
         self.with_penalty = with_penalty
+        self.split_reward = split_reward
         self.reset()
 
     def reset(self):
@@ -51,12 +52,18 @@ class Catch(Game):
 
     def get_score(self):
         if self.is_won():
-            return 1.0
+            return self.win_reward()
         elif self.is_over():
             return -1.0
         else:
             return self.penalty if self.with_penalty else 0.0
 
+    def win_reward(self):
+        if not self.split_reward:
+            return 1.0
+        fy, fx, basket = self.state
+        return 1.0 if (fx == basket) else 0.5
+        
     def is_over(self):
         return self.state[0] == self.grid_size-1
 
